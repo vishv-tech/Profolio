@@ -125,9 +125,20 @@ delete generatedJsonSchema.$schema;
 
 export const GEMINI_RESUME_EXTRACTION_JSON_SCHEMA = generatedJsonSchema;
 
+export type GeminiExtractionValidationIssue = {
+  path: string;
+  code: string;
+  message: string;
+};
+
 export type GeminiExtractionParseResult =
   | { success: true; data: GeminiResumeExtraction }
-  | { success: false };
+  | { success: false; reason: "invalid-json" }
+  | {
+      success: false;
+      reason: "schema";
+      issues: GeminiExtractionValidationIssue[];
+    };
 
 export function parseGeminiResumeExtraction(
   responseText: string,
@@ -137,12 +148,22 @@ export function parseGeminiResumeExtraction(
   try {
     value = JSON.parse(responseText);
   } catch {
-    return { success: false };
+    return { success: false, reason: "invalid-json" };
   }
 
   const parsed = GeminiResumeExtractionSchema.safeParse(value);
 
-  return parsed.success
-    ? { success: true, data: parsed.data }
-    : { success: false };
+  if (parsed.success) {
+    return { success: true, data: parsed.data };
+  }
+
+  return {
+    success: false,
+    reason: "schema",
+    issues: parsed.error.issues.map((issue) => ({
+      path: issue.path.map(String).join(".") || "<root>",
+      code: issue.code,
+      message: issue.message.slice(0, 160),
+    })),
+  };
 }

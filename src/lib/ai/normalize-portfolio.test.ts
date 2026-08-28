@@ -170,5 +170,22 @@ test("strict extraction rejects Gemini-generated application IDs", () => {
   assert.equal(GeminiResumeExtractionSchema.safeParse(invalid).success, false);
   assert.deepEqual(parseGeminiResumeExtraction("```json\n{}\n```"), {
     success: false,
+    reason: "invalid-json",
   });
+});
+
+test("schema parse failures expose only safe validation issue metadata", () => {
+  const result = parseGeminiResumeExtraction("{}");
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.equal(result.reason, "schema");
+    if (result.reason === "schema") {
+      assert.deepEqual(Object.keys(result.issues[0]).sort(), [
+        "code",
+        "message",
+        "path",
+      ]);
+    }
+  }
 });

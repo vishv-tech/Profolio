@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { extractPortfolioFromPdf } from "@/lib/ai/resume-extraction";
+import {
+  extractPortfolioFromPdf,
+  logResumeExtractionError,
+  ResumeExtractionError,
+} from "@/lib/ai/resume-extraction";
 import { requireActiveUser } from "@/lib/auth/guards";
 import { parseStoredPortfolio, toDatabaseJson } from "@/lib/resumes/json";
 import {
@@ -125,6 +129,10 @@ export async function processResume(
     .maybeSingle();
 
   if (readError || !existing) {
+    if (readError) {
+      logResumeExtractionError("database-read", readError);
+    }
+
     return invalidResumeResult();
   }
 
@@ -172,6 +180,15 @@ export async function processResume(
     .maybeSingle();
 
   if (claimError || !claim) {
+    logResumeExtractionError(
+      "database-claim",
+      claimError ??
+        new ResumeExtractionError(
+          "database-claim",
+          "The processing claim was not acquired.",
+        ),
+    );
+
     return {
       success: false,
       message: PROCESSING_MESSAGE,
@@ -186,13 +203,20 @@ export async function processResume(
       .download(claim.file_path);
 
     if (downloadError || !resumeFile) {
-      throw new Error("Resume download failed.");
+      throw new ResumeExtractionError(
+        "storage-download",
+        "Resume download failed.",
+        { cause: downloadError },
+      );
     }
 
     const pdfBytes = new Uint8Array(await resumeFile.arrayBuffer());
 
     if (!validateStoredPdf(pdfBytes)) {
-      throw new Error("Stored resume validation failed.");
+      throw new ResumeExtractionError(
+        "stored-pdf-validation",
+        "Stored resume validation failed.",
+      );
     }
 
     const portfolio = await extractPortfolioFromPdf(
@@ -213,6 +237,15 @@ export async function processResume(
       .maybeSingle();
 
     if (completeError || !completed) {
+      logResumeExtractionError(
+        "database-completion",
+        completeError ??
+          new ResumeExtractionError(
+            "database-completion",
+            "The completed extraction was not persisted.",
+          ),
+      );
+
       return {
         success: false,
         message: PROCESSING_MESSAGE,
@@ -223,14 +256,23 @@ export async function processResume(
 
     revalidatePath("/upload");
     return { success: true, portfolio };
-  } catch {
-    await supabase
+  } catch (error) {
+    logResumeExtractionError("process-resume", error);
+
+    const { error: failureUpdateError } = await supabase
       .from("resumes")
       .update({ extracted_data: null, status: "failed" })
       .eq("id", claim.id)
       .eq("user_id", user.userId)
       .eq("status", "processing")
       .eq("updated_at", claim.updated_at);
+
+    if (failureUpdateError) {
+      logResumeExtractionError(
+        "database-failure-update",
+        failureUpdateError,
+      );
+    }
 
     revalidatePath("/upload");
     return {
