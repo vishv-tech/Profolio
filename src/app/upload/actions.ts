@@ -9,6 +9,8 @@ import {
   ResumeExtractionError,
 } from "@/lib/ai/resume-extraction";
 import { requireActiveUser } from "@/lib/auth/guards";
+import { saveReviewedResumeAsDraft } from "@/lib/portfolios/mutations";
+import { createPortfolioSlugBase } from "@/lib/portfolios/slug";
 import { parseStoredPortfolio, toDatabaseJson } from "@/lib/resumes/json";
 import {
   RESUME_STATUSES,
@@ -308,17 +310,22 @@ export async function saveResumeReview(
     };
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("resumes")
-    .update({ extracted_data: toDatabaseJson(portfolio.data) })
-    .eq("id", parsedId.data)
-    .eq("user_id", user.userId)
-    .eq("status", "completed")
-    .select("id")
-    .maybeSingle();
+  const title =
+    portfolio.data.personal.fullName.trim() ||
+    user.profile.full_name?.trim() ||
+    "Portfolio";
+  const slugBase = createPortfolioSlugBase(
+    user.profile.username,
+    portfolio.data.personal.fullName || user.profile.full_name,
+  );
+  const savedPortfolio = await saveReviewedResumeAsDraft({
+    content: portfolio.data,
+    resumeId: parsedId.data,
+    slugBase,
+    title,
+  });
 
-  if (error || !data) {
+  if (!savedPortfolio) {
     return {
       success: false,
       message: "The reviewed portfolio could not be saved. Please try again.",
@@ -326,5 +333,7 @@ export async function saveResumeReview(
   }
 
   revalidatePath("/upload");
+  revalidatePath("/dashboard");
+  revalidatePath("/themes");
   return { success: true };
 }

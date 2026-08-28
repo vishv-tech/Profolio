@@ -288,7 +288,48 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_published_portfolio: {
+        Args: { p_slug: string }
+        Returns: {
+          portfolio_id: string
+          portfolio_slug: string
+          portfolio_title: string
+          published_content: Json
+          theme_id: string
+          theme_config: Json
+          published_at: string
+          theme_slug: string
+          theme_name: string
+          theme_layout_key: string
+        }[]
+      }
+      publish_portfolio: {
+        Args: {
+          p_draft_content: Json
+          p_portfolio_id: string
+          p_theme_config: Json
+          p_theme_id: string
+        }
+        Returns: {
+          portfolio_id: string
+          portfolio_slug: string
+          deployment_version: number
+          publication_time: string
+        }[]
+      }
+      save_resume_review_as_draft: {
+        Args: {
+          p_draft_content: Json
+          p_resume_id: string
+          p_slug_base: string
+          p_title: string
+        }
+        Returns: {
+          portfolio_id: string
+          portfolio_slug: string
+          portfolio_status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
