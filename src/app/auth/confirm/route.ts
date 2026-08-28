@@ -16,27 +16,48 @@ function internalRedirect(request: NextRequest, path: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type") as EmailOtpType | null;
   const nextPath = request.nextUrl.searchParams.get("next");
 
-  if (
-    !getOptionalSupabasePublicEnv() ||
-    !tokenHash ||
-    tokenHash.length > 4096 ||
-    !type ||
-    !SUPPORTED_CONFIRMATION_TYPES.has(type)
-  ) {
+  if (!getOptionalSupabasePublicEnv()) {
     return internalRedirect(request, "/auth/error?code=confirmation");
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    token_hash: tokenHash,
-    type,
-  });
 
-  if (error) {
+  try {
+    if (code) {
+      if (code.length > 4096) {
+        return internalRedirect(request, "/auth/error?code=confirmation");
+      }
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (error) {
+        return internalRedirect(request, "/auth/error?code=confirmation");
+      }
+    } else {
+      if (
+        !tokenHash ||
+        tokenHash.length > 4096 ||
+        !type ||
+        !SUPPORTED_CONFIRMATION_TYPES.has(type)
+      ) {
+        return internalRedirect(request, "/auth/error?code=confirmation");
+      }
+
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type,
+      });
+
+      if (error) {
+        return internalRedirect(request, "/auth/error?code=confirmation");
+      }
+    }
+  } catch {
     return internalRedirect(request, "/auth/error?code=confirmation");
   }
 

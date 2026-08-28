@@ -3,6 +3,7 @@ import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 export function createAdminClient() {
   const { url } = getSupabasePublicEnv();
@@ -14,8 +15,7 @@ export function createAdminClient() {
     );
   }
 
-  // Add the generated Database generic after the Profolio schema is applied.
-  return createSupabaseClient(url, secretKey, {
+  return createSupabaseClient<Database>(url, secretKey, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,

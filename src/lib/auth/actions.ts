@@ -17,6 +17,36 @@ import { createClient } from "@/lib/supabase/server";
 const CONFIGURATION_MESSAGE =
   "Authentication is not configured yet. Ask the project owner to finish the Supabase setup.";
 
+function originFromVercelHostname(hostname: string | undefined) {
+  const normalizedHostname = hostname?.trim().toLowerCase();
+
+  if (
+    !normalizedHostname ||
+    normalizedHostname.includes("/") ||
+    normalizedHostname.includes("\\") ||
+    normalizedHostname.includes("@") ||
+    normalizedHostname.includes(":")
+  ) {
+    return null;
+  }
+
+  try {
+    const origin = new URL(`https://${normalizedHostname}`);
+
+    return origin.hostname === normalizedHostname ? origin.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function getApplicationOrigin() {
+  return (
+    originFromVercelHostname(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
+    originFromVercelHostname(process.env.VERCEL_URL) ??
+    "http://localhost:3000"
+  );
+}
+
 async function signOutCurrentSession(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ) {
@@ -104,6 +134,7 @@ export async function signup(
 
   const supabase = await createClient();
   const { fullName, username, email, password } = parsed.data;
+  const origin = getApplicationOrigin();
   let destination: string | null = null;
   let confirmationRequired = false;
 
@@ -112,6 +143,7 @@ export async function signup(
       email,
       password,
       options: {
+        emailRedirectTo: `${origin}/auth/confirm`,
         data: {
           full_name: fullName,
           username,

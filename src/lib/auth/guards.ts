@@ -8,8 +8,19 @@ import { z } from "zod";
 import { redirectForUserRole } from "@/lib/auth/redirects";
 import { getOptionalSupabasePublicEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 
-const ProfileSchema = z.strictObject({
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+
+export type AuthProfile = Omit<
+  ProfileRow,
+  "role" | "account_status"
+> & {
+  role: "user" | "admin";
+  account_status: "active" | "suspended";
+};
+
+const ProfileSchema: z.ZodType<AuthProfile> = z.strictObject({
   id: z.string().uuid(),
   username: z.string().nullable(),
   full_name: z.string().nullable(),
@@ -22,8 +33,6 @@ const ProfileSchema = z.strictObject({
 
 const PROFILE_COLUMNS =
   "id, username, full_name, avatar_url, role, account_status, created_at, updated_at";
-
-export type AuthProfile = z.infer<typeof ProfileSchema>;
 
 export type VerifiedUser = {
   userId: string;
@@ -144,7 +153,13 @@ export async function requireActiveUser(): Promise<ActiveUser> {
     redirect("/account-suspended");
   }
 
-  return result.context as ActiveUser;
+  return {
+    ...result.context,
+    profile: {
+      ...result.context.profile,
+      account_status: "active",
+    },
+  };
 }
 
 export async function requireAdmin(): Promise<AdminUser> {
@@ -154,7 +169,13 @@ export async function requireAdmin(): Promise<AdminUser> {
     redirect("/dashboard");
   }
 
-  return user as AdminUser;
+  return {
+    ...user,
+    profile: {
+      ...user.profile,
+      role: "admin",
+    },
+  };
 }
 
 export async function redirectAuthenticatedUser(): Promise<void> {
