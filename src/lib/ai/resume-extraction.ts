@@ -4,8 +4,7 @@ import { ZodError } from "zod";
 
 import {
   GEMINI_REQUEST_TIMEOUT_MS,
-  GEMINI_RESUME_MODEL,
-  getGeminiClient,
+  requestWithGeminiAvailabilityFallback,
 } from "@/lib/ai/gemini";
 import { normalizeResumeExtraction } from "@/lib/ai/normalize-portfolio";
 import {
@@ -169,32 +168,43 @@ async function requestExtraction(
   );
 
   try {
-    const response = await getGeminiClient().models.generateContent({
-      model: GEMINI_RESUME_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: createResumeExtractionPrompt(improveWithAi, repairAttempt) },
+    const { model, value: response } =
+      await requestWithGeminiAvailabilityFallback((client, selectedModel) =>
+        client.models.generateContent({
+          model: selectedModel,
+          contents: [
             {
-              inlineData: {
-                data: Buffer.from(pdfBytes).toString("base64"),
-                mimeType: "application/pdf",
-              },
+              role: "user",
+              parts: [
+                {
+                  text: createResumeExtractionPrompt(
+                    improveWithAi,
+                    repairAttempt,
+                  ),
+                },
+                {
+                  inlineData: {
+                    data: Buffer.from(pdfBytes).toString("base64"),
+                    mimeType: "application/pdf",
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-      config: {
-        abortSignal: controller.signal,
-        maxOutputTokens: 32_768,
-        responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
-        responseMimeType: "application/json",
-        systemInstruction: RESUME_EXTRACTION_SYSTEM_PROMPT,
-      },
-    });
+          config: {
+            abortSignal: controller.signal,
+            maxOutputTokens: 32_768,
+            responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
+            responseMimeType: "application/json",
+            systemInstruction: RESUME_EXTRACTION_SYSTEM_PROMPT,
+          },
+        }),
+      );
 
-    return response.text?.trim() ?? "";
+    return {
+      model,
+      text: response.text?.trim() ?? "",
+    };
   } catch (error) {
     throw new ResumeExtractionError(
       "gemini-request",
@@ -216,16 +226,24 @@ export async function extractPortfolioFromPdf(
   > | null = null;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const responseText = await requestExtraction(
+    const response = await requestExtraction(
       pdfBytes,
       improveWithAi,
       attempt === 1,
     );
-    const parsed = parseGeminiResumeExtraction(responseText);
+    const parsed = parseGeminiResumeExtraction(response.text);
 
     if (parsed.success) {
       try {
-        return normalizeResumeExtraction(parsed.data);
+        const portfolio = normalizeResumeExtraction(parsed.data);
+
+        if (process.env.NODE_ENV === "development") {
+          console.info(
+            `[resume-extraction] extraction succeeded with ${response.model}`,
+          );
+        }
+
+        return portfolio;
       } catch (error) {
         throw new ResumeExtractionError(
           error instanceof ZodError
