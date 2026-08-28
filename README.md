@@ -5,7 +5,8 @@ uploaded resume into an editable, publishable professional portfolio.
 
 ## Current phase
 
-Tasks 3 and 4 are finalized against the configured live Supabase project:
+Tasks 3 and 4 are finalized against the configured live Supabase project, and
+Sprint 1 now provides the first complete user workflow:
 
 - both database migrations are applied remotely
 - `src/types/database.ts` is genuine output generated from the live schema
@@ -15,6 +16,12 @@ Tasks 3 and 4 are finalized against the configured live Supabase project:
 - user/Admin role routing and protected route layouts
 - an append-only migration that blocks suspended accounts through RLS and
   Storage policies
+- private PDF resume upload with client and server validation
+- owner-scoped `resumes` rows with retry-safe processing statuses
+- server-only Gemini structured extraction and optional factual copy improvement
+- normalization into the frozen `PortfolioData` contract with application IDs
+- a complete editable review with add, delete, and reorder controls
+- reviewed-data save followed by the existing `/themes` Sprint 2 handoff
 
 The generated database file describes PostgreSQL and remains separate from the
 application-level `PortfolioData` and `ThemeConfig` contracts. Do not hand-edit
@@ -48,6 +55,34 @@ GEMINI_API_KEY=
 Component, response, log, browser store, or committed environment file. Normal
 authentication uses the request-scoped publishable-key client and the signed-in
 user's cookies, not the privileged client.
+
+`GEMINI_API_KEY` is also server-only and is required for resume extraction.
+Create a key in Google AI Studio, place it only in `.env.local`, and restart the
+development server. The application never sends the key, a raw Gemini error, or
+a private resume URL to the browser.
+
+## Resume workflow
+
+An active user can follow the dashboard link to `/upload`, choose one PDF up to
+10 MB, and optionally enable **Improve wording with AI**. The server validates
+the PDF signature, stores it at `<authenticated-user-id>/<uuid>.pdf` in the
+existing private `resumes` bucket, and inserts an owner-scoped row. It then
+downloads that object through the signed-in request client and submits the
+bytes directly to Gemini; no public or signed browser URL is created.
+
+The row lifecycle is:
+
+```text
+uploaded -> processing -> completed
+                       -> failed -> processing (manual retry)
+```
+
+The extraction schema deliberately has no application IDs. The server adds
+IDs with `crypto.randomUUID()`, validates the normalized result with
+`PortfolioDataSchema`, and only then writes `resumes.extracted_data`. Improve
+mode may polish supported prose but its prompt forbids invented facts,
+credentials, organizations, technologies, dates, metrics, or achievements.
+Users must review the result before saving and continuing to `/themes`.
 
 ## Authentication architecture
 
@@ -129,11 +164,13 @@ A suspended Admin still fails `requireAdmin()`.
 Local checks:
 
 ```bash
+npm test
 npm run lint
 npx tsc --noEmit
 npm run build
 ```
 
 Interactive login and account-specific authorization checks require dedicated
-test-account credentials. A local build alone does not prove those live Auth,
-RLS, or Storage behaviors.
+test-account credentials. Real PDF extraction additionally requires a non-empty
+`GEMINI_API_KEY`. A local build alone does not prove those live Auth, RLS,
+Storage, or Gemini behaviors.
