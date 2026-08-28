@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# Supabase CLI local metadata
+/supabase/.temp/
+
 # next.js
 /.next/
 /out/

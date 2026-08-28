@@ -1,7 +1,29 @@
-import { UserPlus } from "lucide-react";
+import Link from "next/link";
 
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { AuthPageShell } from "@/components/auth/auth-page-shell";
+import { SignupForm } from "@/components/auth/signup-form";
+import { redirectAuthenticatedUser } from "@/lib/auth/guards";
 
-export default function SignupPage() {
-  return <ModulePlaceholder icon={UserPlus} title="Create an account" />;
+export default async function SignupPage() {
+  await redirectAuthenticatedUser();
+
+  return (
+    <AuthPageShell
+      description="Create your account. You may need to confirm your email before continuing."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+            href="/login"
+          >
+            Log in
+          </Link>
+        </>
+      }
+      title="Create your account"
+    >
+      <SignupForm />
+    </AuthPageShell>
+  );
 }

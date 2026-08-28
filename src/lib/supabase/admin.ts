@@ -6,16 +6,16 @@ import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export function createAdminClient() {
   const { url } = getSupabasePublicEnv();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
 
-  if (!serviceRoleKey) {
+  if (!secretKey) {
     throw new Error(
-      "Privileged Supabase access is unavailable because SUPABASE_SERVICE_ROLE_KEY is not configured.",
+      "Privileged Supabase access is unavailable because SUPABASE_SECRET_KEY is not configured.",
     );
   }
 
   // Add the generated Database generic after the Profolio schema is applied.
-  return createSupabaseClient(url, serviceRoleKey, {
+  return createSupabaseClient(url, secretKey, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,
