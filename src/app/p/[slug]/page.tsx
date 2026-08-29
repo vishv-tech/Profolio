@@ -1,6 +1,7 @@
-import { Globe2 } from "lucide-react";
+import { notFound } from "next/navigation";
 
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { getPublishedPortfolioBySlug } from "@/lib/portfolios/queries";
+import { loadThemeComponent } from "@/themes";
 
 export default async function PublicPortfolioPage({
   params,
@@ -8,13 +9,17 @@ export default async function PublicPortfolioPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const portfolio = await getPublishedPortfolioBySlug(slug);
 
-  return (
-    <ModulePlaceholder
-      description="Public portfolio rendering will be connected in a later phase."
-      eyebrow="Portfolio Preview"
-      icon={Globe2}
-      title={`Portfolio: ${slug}`}
-    />
-  );
+  if (!portfolio) {
+    notFound();
+  }
+
+  const Theme = await loadThemeComponent(portfolio.theme.layoutKey);
+
+  if (!Theme) {
+    notFound();
+  }
+
+  return <Theme config={portfolio.themeConfig} data={portfolio.publishedContent} />;
 }

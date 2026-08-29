@@ -1,0 +1,294 @@
+.root {
+  color: #1b2453;
+  background: #f4d73b;
+  font-family: var(--pavni-body-font);
+}
+
+.cover {
+  position: relative;
+  min-height: clamp(540px, 64vw, 735px);
+  padding: clamp(28px, 5vw, 72px);
+  overflow: hidden;
+  background: #f4d73b;
+}
+
+.paperSun {
+  position: absolute;
+  top: -26%;
+  left: -8%;
+  width: clamp(235px, 37vw, 520px);
+  aspect-ratio: 1;
+  background: #f19b35;
+  border-radius: 50%;
+  box-shadow: 0 0 0 24px #e73c2b, 0 0 0 40px #fffbe8;
+  transform: rotate(10deg);
+}
+
+.paperSun::after {
+  position: absolute;
+  inset: 13%;
+  content: "";
+  border: 3px dashed #1b2453;
+  border-radius: 47% 53% 45% 55%;
+}
+
+.blueBlock {
+  position: absolute;
+  top: 8%;
+  right: -7%;
+  width: min(48%, 560px);
+  height: 85%;
+  background: #255ac4;
+  border-radius: 52% 14% 22% 57%;
+  transform: rotate(-7deg);
+}
+
+.blueBlock::after {
+  position: absolute;
+  bottom: -9%;
+  left: -33%;
+  width: 130%;
+  height: 55%;
+  content: "";
+  background: repeating-linear-gradient(45deg, #fffbe8 0 7px, transparent 7px 17px);
+  transform: rotate(-19deg);
+}
+
+.cover nav {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #1b2453;
+  font: 800 9px/1.2 var(--pavni-mono-font);
+  letter-spacing: 0.13em;
+}
+
+.title {
+  position: relative;
+  z-index: 3;
+  max-width: 64%;
+  margin-top: clamp(116px, 17vw, 192px);
+}
+
+.title p,
+.coverNote,
+.index {
+  margin: 0;
+  color: #1b2453;
+  font: 800 10px/1.2 var(--pavni-mono-font);
+  letter-spacing: 0.13em;
+}
+
+.title h1 {
+  display: flex;
+  gap: clamp(2px, 0.5vw, 8px);
+  max-width: none;
+  margin: 14px 0 9px;
+  white-space: nowrap;
+}
+
+.title h1 span {
+  display: inline-grid;
+  flex: 0 0 auto;
+  min-width: 0.67em;
+  height: 0.91em;
+  place-items: center;
+  color: #fffbe8;
+  background: #1b2453;
+  font: 800 clamp(30px, 4vw, 60px)/0.82 var(--pavni-heading-font);
+  letter-spacing: -0.12em;
+  transform: rotate(-3deg);
+}
+
+.title h1 span:nth-child(2n) {
+  color: #1b2453;
+  background: #fffbe8;
+  transform: rotate(4deg) translateY(8px);
+}
+
+.title h1 span:nth-child(3n) {
+  color: #fffbe8;
+  background: #e63d2d;
+  transform: rotate(-7deg);
+}
+
+.title strong {
+  display: inline-block;
+  margin-left: clamp(25px, 6vw, 85px);
+  padding: 8px 13px;
+  color: #1b2453;
+  background: #bde0e7;
+  border: 2px solid #1b2453;
+  font: 800 clamp(14px, 1.8vw, 21px)/1 var(--pavni-heading-font);
+  transform: rotate(2deg);
+}
+
+.profileCard {
+  position: absolute;
+  z-index: 5;
+  right: clamp(34px, 12vw, 170px);
+  bottom: clamp(45px, 9vw, 110px);
+  width: clamp(122px, 18vw, 215px);
+  padding: 12px 12px 29px;
+  background: #fffbe8;
+  box-shadow: 9px 10px 0 #1b2453;
+  animation: profileCardTilt 3.8s ease-in-out infinite;
+}
+
+.profileCard:is(:hover, :focus-within) {
+  animation-play-state: paused;
+  transform: translateY(-12px) rotate(-5deg);
+}
+
+.tape {
+  position: absolute;
+  z-index: 2;
+  top: -16px;
+  left: 50%;
+  width: 62px;
+  height: 25px;
+  background: rgba(189, 224, 231, 0.82);
+  transform: translateX(-50%) rotate(-7deg);
+}
+
+.profilePhoto {
+  display: grid;
+  aspect-ratio: 0.88;
+  place-items: center;
+  overflow: hidden;
+  color: #fffbe8;
+  background: #e63d2d;
+  font: 800 clamp(35px, 4vw, 58px)/1 var(--pavni-heading-font);
+}
+
+.profilePhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.9) contrast(1.05);
+}
+
+.profileCard small {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  color: #1b2453;
+  font: 800 7px/1.2 var(--pavni-mono-font);
+  letter-spacing: 0.12em;
+}
+
+.scribble {
+  position: absolute;
+  z-index: 3;
+  right: 38%;
+  bottom: 17%;
+  color: #e63d2d;
+  font-size: clamp(49px, 7vw, 98px);
+  transform: rotate(19deg);
+}
+
+.coverNote {
+  position: absolute;
+  z-index: 3;
+  bottom: clamp(35px, 6vw, 72px);
+  left: clamp(28px, 5vw, 72px);
+  max-width: 35%;
+  line-height: 1.6;
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.52fr) minmax(0, 1fr) minmax(180px, 0.45fr);
+  gap: clamp(27px, 5vw, 70px);
+  align-items: end;
+  padding: clamp(66px, 9vw, 122px) clamp(23px, 6vw, 88px);
+  background: #fffbe8;
+}
+
+.index { margin-bottom: 18px; color: #e63d2d; }
+
+.intro h2 {
+  margin: 0;
+  color: #1b2453;
+  font: 800 clamp(28px, 4.2vw, 57px)/0.96 var(--pavni-heading-font);
+  letter-spacing: -0.07em;
+}
+
+.summary :global(.summary-copy) { color: #4f5a82; }
+.intro :global(.contact-line),
+.intro :global(.contact-links) { color: #4f5a82; }
+
+.content { background: #f4d73b; }
+
+.content :global(.portfolio-section) {
+  margin-inline: clamp(23px, 6vw, 88px);
+  padding: clamp(52px, 8vw, 95px) 0;
+  border-color: rgba(27, 36, 83, 0.35);
+}
+
+.content :global(.section-title) { color: #1b2453; }
+.content :global(.section-title) span { color: #e63d2d; }
+
+.content :global(.project-card),
+.content :global(.cert-list article) {
+  border: 2px solid #1b2453;
+  border-radius: 0;
+  box-shadow: 7px 7px 0 #1b2453;
+}
+
+.content :global(.project-card:is(:hover, :focus-within, :active)),
+.content :global(.cert-list article:is(:hover, :focus-within, :active)) {
+  background: #bde0e7;
+  box-shadow: 0 16px 0 #255ac4;
+  transform: translateY(-12px) rotate(-1deg);
+}
+
+.content :global(.chips span) {
+  color: #1b2453;
+  background: #bde0e7;
+  border-radius: 0;
+}
+
+.content :global(.project-links),
+.content :global(.item-meta),
+.content :global(.cert-list a) { color: #1e4db7; }
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 25px clamp(23px, 6vw, 88px);
+  color: #fffbe8;
+  background: #1b2453;
+  font: 800 9px/1.4 var(--pavni-mono-font);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+@keyframes profileCardTilt {
+  0%, 100% { transform: rotate(6deg) translateY(0); }
+  45% { transform: rotate(1.5deg) translateY(-8px); }
+  70% { transform: rotate(8.5deg) translateY(-3px); }
+}
+
+@media (max-width: 720px) {
+  .cover { min-height: 630px; }
+  .title { max-width: 87%; }
+  .intro { grid-template-columns: 1fr; gap: 28px; }
+}
+
+@media (max-width: 480px) {
+  .cover { min-height: 575px; padding: 24px; }
+  .cover nav span:nth-child(2) { display: none; }
+  .title { max-width: 100%; margin-top: 170px; }
+  .title h1 { gap: 2px; }
+  .title h1 span { font-size: clamp(26px, 8.7vw, 43px); }
+  .title strong { margin-left: 25px; }
+  .profileCard { right: 25px; bottom: 27px; width: 124px; }
+  .scribble { right: 8%; bottom: 28%; }
+  .coverNote { display: none; }
+  .intro { padding: 58px 23px; }
+  .footer { font-size: 8px; }
+}

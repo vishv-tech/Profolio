@@ -1,0 +1,40 @@
+.root { padding: clamp(16px, 3vw, 34px); }
+
+.intro {
+  position: relative;
+  padding: clamp(36px, 6vw, 76px);
+  color: #281704;
+  background: color-mix(in srgb, var(--accent) 72%, #ffb24b);
+  border-radius: calc(var(--radius) + 8px);
+}
+
+.intro :global(.profile-identity) { max-width: 680px; }
+.intro :global(.profile-identity h1) { color: #281704; }
+.intro :global(.headline), .intro :global(.eyebrow), .intro :global(.contact-line), .intro :global(.contact-links) { color: #5d3207; }
+.intro :global(.contact-block) { margin-top: 28px; }
+.intro :global(.avatar) { color: #3b2102; background: #fff3cf; border-color: #ed8c1e; }
+
+.dot { position: absolute; top: 30px; right: 34px; width: 16px; height: 16px; background: var(--ink); border-radius: 50%; }
+
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.card { padding: 26px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.card :global(.section-title) { margin-bottom: 20px; }
+.summary { grid-column: span 5; background: color-mix(in srgb, #c9e9d6 78%, var(--surface)); }
+.projects { grid-column: span 7; }
+.projects :global(.project-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.skills { grid-column: span 4; background: color-mix(in srgb, #e0d6ff 78%, var(--surface)); }
+.experience { grid-column: span 8; background: color-mix(in srgb, #ffe2d3 78%, var(--surface)); }
+
+.grid :global(.portfolio-section) { grid-column: 1 / -1; padding: 25px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.grid :global(.portfolio-section .section-title) { margin-bottom: 16px; }
+.grid :global(.project-card:is(:hover, :focus-within)), .grid :global(.cert-list article:is(:hover, :focus-within)) { box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 20%, transparent); transform: translateY(-6px); }
+
+@media (max-width: 850px) {
+  .summary, .projects, .skills, .experience { grid-column: span 12; }
+}
+
+@media (max-width: 560px) {
+  .intro { padding: 28px 22px; }
+  .card, .grid :global(.portfolio-section) { padding: 20px; }
+  .projects :global(.project-grid) { grid-template-columns: 1fr; }
+}

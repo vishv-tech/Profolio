@@ -1,0 +1,469 @@
+.root {
+  --mouse-x: 58%;
+  --mouse-y: 38%;
+  color: var(--ink);
+  background: #008080;
+  image-rendering: pixelated;
+}
+
+.desktop {
+  position: relative;
+  min-height: clamp(500px, 63vw, 720px);
+  overflow: hidden;
+  background-color: #008080;
+  background-image: radial-gradient(rgb(255 255 255 / 19%) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.desktop::after {
+  position: absolute;
+  top: -43%;
+  right: -20%;
+  width: min(60vw, 750px);
+  aspect-ratio: 1;
+  content: "";
+  opacity: 0.26;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 35px #fff, 0 0 0 37px #008080, 0 0 0 72px #fff;
+}
+
+.cursor {
+  position: absolute;
+  z-index: 40;
+  top: var(--mouse-y);
+  left: var(--mouse-x);
+  width: 20px;
+  height: 26px;
+  pointer-events: none;
+  background: #fff;
+  clip-path: polygon(0 0, 0 100%, 27% 76%, 42% 100%, 55% 94%, 39% 68%, 66% 68%);
+  filter: drop-shadow(2px 2px 0 #000);
+  transform: translate(-2px, -2px);
+  transition: left 80ms linear, top 80ms linear;
+}
+
+.iconColumn {
+  position: absolute;
+  z-index: 3;
+  top: clamp(40px, 7vw, 86px);
+  left: clamp(22px, 4vw, 60px);
+  display: grid;
+  gap: 23px;
+}
+
+.shortcut {
+  display: grid;
+  width: 76px;
+  gap: 5px;
+  place-items: center;
+  color: #fff;
+  font: 700 11px/1 var(--pavni-body-font);
+  text-shadow: 1px 1px #000;
+}
+
+.shortcut b {
+  font-weight: 700;
+}
+
+.shortcut i {
+  display: grid;
+  width: 42px;
+  aspect-ratio: 1;
+  place-items: center;
+  color: #001e1e;
+  background: #e7d364;
+  border: 2px solid #fff;
+  box-shadow: 2px 2px #000;
+  font: 700 24px/1 var(--pavni-heading-font);
+  font-style: normal;
+}
+
+.shortcut:nth-child(2) i {
+  color: #fff;
+  background: #2859ac;
+}
+
+.shortcut:nth-child(3) i {
+  color: #111;
+  background: #eb7a44;
+}
+
+.welcomeWindow,
+.aboutWindow,
+.projectsWindow {
+  border: 3px solid;
+  border-color: #fff #404040 #404040 #fff;
+  box-shadow: 3px 3px #000;
+}
+
+.welcomeWindow {
+  position: absolute;
+  z-index: 4;
+  top: clamp(58px, 9vw, 112px);
+  left: clamp(126px, 18vw, 260px);
+  width: min(66%, 700px);
+  background: #c0c0c0;
+}
+
+.titleBar {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 7px;
+  color: #fff;
+  background: #000080;
+  font: 700 12px/1 var(--pavni-body-font);
+}
+
+.titleBar b {
+  display: grid;
+  width: 18px;
+  aspect-ratio: 1;
+  place-items: center;
+  color: #111;
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.windowBody {
+  padding: clamp(28px, 5vw, 62px);
+}
+
+.identityGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(18px, 4vw, 42px);
+  align-items: center;
+}
+
+.identityGrid p:first-child {
+  margin: 0;
+  color: #333;
+  font: 700 clamp(15px, 2vw, 23px)/1 var(--pavni-mono-font);
+}
+
+.welcomeWindow h1 {
+  margin: 9px 0;
+  font: 900 clamp(42px, 7vw, 92px)/0.82 var(--pavni-heading-font);
+  letter-spacing: -0.085em;
+}
+
+.welcomeWindow strong {
+  display: block;
+  max-width: 430px;
+  color: #007171;
+  font: 700 clamp(18px, 2.7vw, 31px)/1.05 var(--pavni-heading-font);
+}
+
+.portrait {
+  display: grid;
+  width: clamp(78px, 12vw, 132px);
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  color: #fff;
+  background: #000080;
+  border: 3px solid;
+  border-color: #fff #404040 #404040 #fff;
+  font: 800 clamp(24px, 4vw, 48px)/1 var(--pavni-heading-font);
+}
+
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.72) contrast(1.08);
+}
+
+.bootText {
+  max-width: 480px;
+  margin: 28px 0 17px;
+  font: 16px/1.35 var(--pavni-mono-font);
+}
+
+.welcomeWindow :global(.contact-line),
+.welcomeWindow :global(.contact-links) {
+  color: #000080;
+  font-family: var(--pavni-mono-font);
+  font-weight: 700;
+}
+
+.desktopHint {
+  position: absolute;
+  z-index: 3;
+  right: clamp(24px, 5vw, 72px);
+  bottom: 59px;
+  margin: 0;
+  color: #fff;
+  font: 700 10px/1.4 var(--pavni-mono-font);
+  letter-spacing: 0.07em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.taskbar {
+  position: absolute;
+  z-index: 6;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  min-height: 40px;
+  gap: 16px;
+  align-items: center;
+  padding: 4px 8px;
+  color: #111;
+  background: #c0c0c0;
+  border-top: 3px solid #fff;
+  font: 700 12px/1 var(--pavni-body-font);
+}
+
+.taskbar > b,
+.taskbar > span,
+.taskbar > strong {
+  padding: 5px 8px;
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+}
+
+.taskbar i {
+  color: #008080;
+  font-style: normal;
+}
+
+.taskbar strong {
+  margin-left: auto;
+  font-family: var(--pavni-mono-font);
+  font-size: 10px;
+}
+
+.workspace {
+  padding: clamp(62px, 9vw, 115px) clamp(18px, 4vw, 55px);
+  background: color-mix(in srgb, var(--bg) 28%, #008080);
+}
+
+.aboutWindow,
+.projectsWindow {
+  max-width: 1030px;
+  margin: 0 auto clamp(54px, 8vw, 95px);
+  background: #c0c0c0;
+  transition: box-shadow 0.2s steps(2, end), transform 0.2s steps(2, end);
+}
+
+.aboutWindow > div:last-child {
+  padding: clamp(35px, 6vw, 82px);
+  background: var(--surface);
+}
+
+.sectionKicker {
+  margin: 0 0 17px;
+  color: #007171;
+  font: 700 11px/1.2 var(--pavni-mono-font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aboutWindow :global(.summary-copy) {
+  max-width: 780px;
+  color: var(--ink);
+  font: 700 clamp(27px, 4vw, 52px)/1.04 var(--pavni-heading-font);
+  letter-spacing: -0.06em;
+}
+
+.projectsWindow :global(.project-grid) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.projectsWindow :global(.project-card),
+.workspace :global(.cert-list article) {
+  color: #111;
+  background: var(--surface);
+  border: 3px solid;
+  border-color: #fff #404040 #404040 #fff;
+  border-radius: 0;
+  box-shadow: 3px 3px #000;
+}
+
+.projectsWindow :global(.project-card:nth-child(3n + 1):is(:hover, :focus-within)) {
+  background: #e7d364;
+  box-shadow: 10px 0 #000;
+  transform: translate(9px, -5px);
+}
+
+.projectsWindow :global(.project-card:nth-child(3n + 2):is(:hover, :focus-within)) {
+  background: #9cd8d2;
+  box-shadow: -8px 9px #000;
+  transform: translate(-8px, 8px);
+}
+
+.projectsWindow :global(.project-card:nth-child(3n):is(:hover, :focus-within)) {
+  color: #fff;
+  background: #2859ac;
+  box-shadow: 8px -8px #000;
+  transform: translate(6px, -8px);
+}
+
+.workspace :global(.portfolio-section) {
+  max-width: 1030px;
+  margin: 0 auto 20px;
+  padding: clamp(42px, 6vw, 76px);
+  color: #111;
+  background: #c0c0c0;
+  border: 3px solid;
+  border-color: #fff #404040 #404040 #fff;
+  box-shadow: 3px 3px #000;
+  transition: background 0.2s steps(2, end), box-shadow 0.2s steps(2, end), transform 0.2s steps(2, end);
+}
+
+.workspace :global(.section-title) {
+  color: #000080;
+  font-family: var(--pavni-mono-font);
+}
+
+.workspace :global(.section-title span),
+.workspace :global(.item-meta),
+.workspace :global(.project-links),
+.workspace :global(.cert-list a) {
+  color: var(--accent) !important;
+}
+
+.workspace :global(.chips span) {
+  color: #fff;
+  background: #000080;
+  border-radius: 0;
+  font-family: var(--pavni-mono-font);
+}
+
+.aboutWindow:hover,
+.projectsWindow:hover,
+.workspace :global(.portfolio-section:hover) {
+  box-shadow: 8px 8px 0 #e7d364, 11px 11px 0 #000;
+  transform: translate(-4px, -4px);
+}
+
+.footer {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  padding: 10px clamp(15px, 4vw, 50px);
+  color: #111;
+  background: #c0c0c0;
+  border-top: 3px solid #fff;
+  font: 700 12px/1.2 var(--pavni-body-font);
+}
+
+.footer span:first-child {
+  padding: 5px 8px;
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+}
+
+.footer span:last-child {
+  margin-left: auto;
+  font: 11px/1.2 var(--pavni-mono-font);
+}
+
+.footer strong {
+  color: #000080;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor,
+  .aboutWindow,
+  .projectsWindow,
+  .workspace :global(.portfolio-section),
+  .projectsWindow :global(.project-card) {
+    transition: none;
+  }
+
+  .projectsWindow :global(.project-card:is(:hover, :focus-within)),
+  .workspace :global(.portfolio-section:hover) {
+    transform: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .desktop {
+    min-height: 650px;
+  }
+
+  .welcomeWindow {
+    left: 18%;
+    width: 74%;
+  }
+
+  .iconColumn {
+    left: 12px;
+  }
+
+  .projectsWindow :global(.project-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    flex-wrap: wrap;
+  }
+
+  .footer span:last-child {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .desktop {
+    min-height: 680px;
+  }
+
+  .welcomeWindow {
+    top: 118px;
+    left: 17%;
+    width: 79%;
+  }
+
+  .windowBody {
+    padding: 28px 20px;
+  }
+
+  .identityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .welcomeWindow h1 {
+    font-size: clamp(38px, 13vw, 52px);
+  }
+
+  .portrait {
+    display: none;
+  }
+
+  .bootText {
+    font-size: 13px;
+  }
+
+  .shortcut {
+    width: 60px;
+    font-size: 9px;
+  }
+
+  .taskbar > span {
+    display: none;
+  }
+
+  .desktopHint {
+    right: 16px;
+    font-size: 8px;
+  }
+
+  .workspace {
+    padding-inline: 12px;
+  }
+
+  .footer {
+    font-size: 10px;
+  }
+}
