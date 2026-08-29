@@ -8,6 +8,7 @@ type ModelFallbackOptions<TModel extends string, TValue> = {
   attemptTimeoutMs?: number;
   models: readonly TModel[];
   onAttempt?: (result: ModelAttemptResult<TModel>) => void;
+  onAttemptStart?: (attempt: ModelAttemptStart<TModel>) => void;
   onFallback?: (unavailableModel: TModel, nextModel: TModel) => void;
   overallSignal?: AbortSignal;
   request: (model: TModel, signal: AbortSignal) => Promise<TValue>;
@@ -18,7 +19,13 @@ export type ModelFallbackResult<TModel extends string, TValue> = {
   value: TValue;
 };
 
+export type ModelAttemptStart<TModel extends string> = {
+  attemptNumber: number;
+  model: TModel;
+};
+
 export type ModelAttemptResult<TModel extends string> = {
+  attemptNumber: number;
   durationMs: number;
   model: TModel;
   outcome: "failed" | "success" | "timeout";
@@ -36,6 +43,10 @@ export class ModelAttemptTimeoutError extends Error {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isAbortError(error: unknown) {
+  return isRecord(error) && error.name === "AbortError";
 }
 
 function collectErrorSignals(
@@ -191,7 +202,10 @@ async function requestWithAttemptTimeout<TModel extends string, TValue>(
       throw overallSignal.reason ?? error;
     }
 
-    if (timedOut) {
+    if (
+      attemptTimeoutMs !== undefined &&
+      (timedOut || isAbortError(error))
+    ) {
       throw new ModelAttemptTimeoutError(model, attemptTimeoutMs!);
     }
 
@@ -212,6 +226,7 @@ export async function runWithModelFallback<
   attemptTimeoutMs,
   models,
   onAttempt,
+  onAttemptStart,
   request,
   onFallback,
   overallSignal,
@@ -224,7 +239,9 @@ export async function runWithModelFallback<
 
   for (let index = 0; index < models.length; index += 1) {
     const model = models[index];
+    const attemptNumber = index + 1;
     const startedAt = performance.now();
+    onAttemptStart?.({ attemptNumber, model });
 
     try {
       const value = await requestWithAttemptTimeout(
@@ -234,6 +251,7 @@ export async function runWithModelFallback<
         overallSignal,
       );
       onAttempt?.({
+        attemptNumber,
         durationMs: performance.now() - startedAt,
         model,
         outcome: "success",
@@ -242,6 +260,7 @@ export async function runWithModelFallback<
     } catch (error) {
       const timedOut = error instanceof ModelAttemptTimeoutError;
       onAttempt?.({
+        attemptNumber,
         durationMs: performance.now() - startedAt,
         model,
         outcome: timedOut ? "timeout" : "failed",

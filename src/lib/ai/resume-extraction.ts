@@ -4,6 +4,12 @@ import type { Part } from "@google/genai";
 import { ZodError } from "zod";
 
 import {
+  canStartSchemaRepair,
+  GeminiOverallTimeoutError,
+  remainingGeminiBudgetMs,
+} from "@/lib/ai/extraction-budget";
+import {
+  GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
   GEMINI_OVERALL_TIMEOUT_MS,
   requestWithGeminiAvailabilityFallback,
 } from "@/lib/ai/gemini";
@@ -49,6 +55,8 @@ type PreparedResumeSource =
 type ExtractPortfolioOptions = {
   timing?: ResumeProcessingTiming;
 };
+
+type GeminiRequestPhase = "initial" | "repair";
 
 const EMPTY_PDF_SOURCE: ResumePdfSource = {
   diagnostics: {
@@ -196,6 +204,15 @@ function sourcePart(source: PreparedResumeSource): Part {
   };
 }
 
+function logGeminiAttempt(
+  stage: "model-attempt-end" | "model-attempt-start",
+  details: Record<string, number | string>,
+) {
+  if (process.env.NODE_ENV === "development") {
+    console.info("[resume-extraction]", { stage, ...details });
+  }
+}
+
 async function requestExtraction(
   source: PreparedResumeSource,
   improveWithAi: boolean,
@@ -203,6 +220,7 @@ async function requestExtraction(
   overallSignal: AbortSignal,
   timing?: ResumeProcessingTiming,
 ) {
+  const phase: GeminiRequestPhase = repairAttempt ? "repair" : "initial";
   const parts: Part[] = [
     {
       text: createResumeExtractionPrompt(
@@ -223,6 +241,10 @@ async function requestExtraction(
             contents: [{ role: "user", parts }],
             config: {
               abortSignal: attemptSignal,
+              httpOptions: {
+                retryOptions: { attempts: 1 },
+                timeout: GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
+              },
               maxOutputTokens: 32_768,
               responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
               responseMimeType: "application/json",
@@ -231,11 +253,31 @@ async function requestExtraction(
           }),
         {
           onAttempt: (result) => {
+            const outcome =
+              result.outcome === "timeout"
+                ? "attempt_timeout"
+                : result.outcome;
+            logGeminiAttempt("model-attempt-end", {
+              attemptNumber: result.attemptNumber,
+              durationMs: Math.max(0, Math.round(result.durationMs)),
+              inputMode: source.kind,
+              model: result.model,
+              outcome,
+              phase,
+            });
             timing?.record(
               `gemini-${result.model}`,
               result.durationMs,
-              `${repairAttempt ? "repair-" : ""}${result.outcome}`,
+              `${phase}-${outcome}`,
             );
+          },
+          onAttemptStart: ({ attemptNumber, model }) => {
+            logGeminiAttempt("model-attempt-start", {
+              attemptNumber,
+              inputMode: source.kind,
+              model,
+              phase,
+            });
           },
           overallSignal,
         },
@@ -271,7 +313,7 @@ function logPdfSourceDiagnostics(source: ResumePdfSource) {
   console.info("[resume-extraction]", {
     stage: "pdf-deterministic-parse",
     annotationLinks: source.links.length,
-    inputKind: source.useTextForGemini ? "text" : "pdf",
+    inputMode: source.useTextForGemini ? "text" : "pdf",
     pageCount: source.pageCount,
     textCharacters: source.text.length,
     ...source.diagnostics,
@@ -302,11 +344,13 @@ export async function extractPortfolioFromPdf(
         prepareGeminiSource(source, pdfBytes),
       )
     : prepareGeminiSource(source, pdfBytes);
+  const overallStartedAt = performance.now();
+  const overallDeadline = overallStartedAt + GEMINI_OVERALL_TIMEOUT_MS;
   const overallController = new AbortController();
   const overallTimeout = setTimeout(
     () =>
       overallController.abort(
-        new Error("Gemini resume extraction exceeded its overall time budget."),
+        new GeminiOverallTimeoutError(GEMINI_OVERALL_TIMEOUT_MS),
       ),
     GEMINI_OVERALL_TIMEOUT_MS,
   );
@@ -317,6 +361,23 @@ export async function extractPortfolioFromPdf(
 
   try {
     for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (attempt === 1 && !canStartSchemaRepair(overallDeadline)) {
+        const remainingMs = Math.round(
+          remainingGeminiBudgetMs(overallDeadline),
+        );
+        timing?.record("gemini-schema-repair", 0, "insufficient-budget");
+
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[resume-extraction]", {
+            stage: "schema-repair-skipped",
+            reason: "insufficient-overall-budget",
+            remainingMs,
+          });
+        }
+
+        break;
+      }
+
       const response = await requestExtraction(
         preparedSource,
         improveWithAi,
