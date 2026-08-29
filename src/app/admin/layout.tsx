@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 
-import { ProtectedHeader } from "@/components/auth/protected-header";
-import { requireAdmin } from "@/lib/auth/guards";
+import { AdminShell } from "@/components/admin/admin-shell";
+import { requireAdmin } from "@/lib/admin/require-admin";
+
+import "./admin.css";
 
 export default async function AdminLayout({
   children,
@@ -11,13 +13,17 @@ export default async function AdminLayout({
   const admin = await requireAdmin();
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <ProtectedHeader
-        destination="/admin"
-        email={admin.email}
-        label="Admin workspace"
-      />
-      <section className="flex flex-1">{children}</section>
-    </div>
+    <AdminShell
+      identity={{
+        email: admin.email,
+        profile: {
+          avatar_url: admin.profile.avatar_url,
+          full_name: admin.profile.full_name,
+          username: admin.profile.username,
+        },
+      }}
+    >
+      {children}
+    </AdminShell>
   );
 }

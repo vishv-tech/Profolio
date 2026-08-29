@@ -1,13 +1,10 @@
-import { ShieldCheck } from "lucide-react";
+import { DashboardScreen } from "@/components/admin/dashboard-screen";
+import { getDashboardData } from "@/lib/admin/dashboard";
+import { requireAdmin } from "@/lib/admin/require-admin";
 
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+export default async function AdminPage() {
+  const [admin, data] = await Promise.all([requireAdmin(), getDashboardData()]);
+  const name = admin.profile.full_name || admin.profile.username || "Admin";
 
-export default function AdminPage() {
-  return (
-    <ModulePlaceholder
-      description="The admin module will be integrated here in a later phase."
-      icon={ShieldCheck}
-      title="Admin Module"
-    />
-  );
+  return <DashboardScreen adminName={name} data={data} />;
 }
