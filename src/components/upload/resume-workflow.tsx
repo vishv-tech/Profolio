@@ -245,7 +245,9 @@ export function ResumeWorkflow({
           return;
         }
 
-        router.push("/themes");
+        router.push(
+          `/themes?portfolio=${encodeURIComponent(result.portfolioId)}`,
+        );
         router.refresh();
       } catch {
         setFeedback({

@@ -335,5 +335,5 @@ export async function saveResumeReview(
   revalidatePath("/upload");
   revalidatePath("/dashboard");
   revalidatePath("/themes");
-  return { success: true };
+  return { success: true, portfolioId: savedPortfolio.portfolio_id };
 }

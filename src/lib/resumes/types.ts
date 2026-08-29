@@ -37,5 +37,5 @@ export type ProcessResumeResult =
     };
 
 export type SaveResumeResult =
-  | { success: true }
+  | { success: true; portfolioId: string }
   | { success: false; message: string };
