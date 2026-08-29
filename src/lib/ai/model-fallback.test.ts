@@ -197,26 +197,65 @@ test("a hung model attempt times out and advances without consuming the overall 
   );
 });
 
+test("an SDK-style AbortError from the attempt deadline advances to the next model", async () => {
+  const attempts: string[] = [];
+  const starts: string[] = [];
+  const outcomes: string[] = [];
+  const result = await runWithModelFallback({
+    attemptTimeoutMs: 25,
+    models: ["primary", "fallback"] as const,
+    onAttempt: ({ attemptNumber, model, outcome }) =>
+      outcomes.push(`${attemptNumber}:${model}:${outcome}`),
+    onAttemptStart: ({ attemptNumber, model }) =>
+      starts.push(`${attemptNumber}:${model}`),
+    request: async (model, signal) => {
+      attempts.push(model);
+
+      if (model === "primary") {
+        return new Promise<string>((_, reject) => {
+          signal.addEventListener(
+            "abort",
+            () =>
+              reject(
+                new DOMException("This operation was aborted", "AbortError"),
+              ),
+            { once: true },
+          );
+        });
+      }
+
+      return "success";
+    },
+  });
+
+  assert.equal(result.model, "fallback");
+  assert.deepEqual(attempts, ["primary", "fallback"]);
+  assert.deepEqual(starts, ["1:primary", "2:fallback"]);
+  assert.deepEqual(outcomes, ["1:primary:timeout", "2:fallback:success"]);
+});
+
 test("a normal successful request is not cancelled by its attempt timeout", async () => {
   let aborted = false;
   const result = await runWithModelFallback({
-    attemptTimeoutMs: 100,
+    attemptTimeoutMs: 30,
     models: ["primary", "fallback"] as const,
     request: async (model, signal) => {
       signal.addEventListener("abort", () => {
         aborted = true;
       });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 5));
       return model;
     },
   });
 
+  await new Promise((resolve) => setTimeout(resolve, 40));
   assert.equal(result.model, "primary");
   assert.equal(aborted, false);
 });
 
 test("the overall signal bounds the full fallback operation", async () => {
   const controller = new AbortController();
+  const attempts: string[] = [];
   const overallError = new Error("overall timeout");
   const startedAt = performance.now();
   const timeout = setTimeout(() => controller.abort(overallError), 30);
@@ -227,7 +266,22 @@ test("the overall signal bounds the full fallback operation", async () => {
         attemptTimeoutMs: 1_000,
         models: ["primary", "fallback"] as const,
         overallSignal: controller.signal,
-        request: async () => new Promise<string>(() => {}),
+        request: async (model, signal) => {
+          attempts.push(model);
+          return new Promise<string>((_, reject) => {
+            signal.addEventListener(
+              "abort",
+              () =>
+                reject(
+                  new DOMException(
+                    "This operation was aborted",
+                    "AbortError",
+                  ),
+                ),
+              { once: true },
+            );
+          });
+        },
       }),
       overallError,
     );
@@ -236,4 +290,25 @@ test("the overall signal bounds the full fallback operation", async () => {
   }
 
   assert.ok(performance.now() - startedAt < 500);
+  assert.deepEqual(attempts, ["primary"]);
+});
+
+test("successful attempts detach from the overall signal", async () => {
+  const overallController = new AbortController();
+  const attemptSignals: AbortSignal[] = [];
+  const result = await runWithModelFallback({
+    attemptTimeoutMs: 30,
+    models: ["primary"] as const,
+    overallSignal: overallController.signal,
+    request: async (model, signal) => {
+      attemptSignals.push(signal);
+      return model;
+    },
+  });
+
+  overallController.abort(new Error("late overall abort"));
+  await new Promise((resolve) => setTimeout(resolve, 40));
+
+  assert.equal(result.model, "primary");
+  assert.equal(attemptSignals[0]?.aborted, false);
 });

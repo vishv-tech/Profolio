@@ -86,6 +86,7 @@ export function ResumeWorkflow({
   );
   const [isWorking, startWorking] = useTransition();
   const [isSaving, startSaving] = useTransition();
+  const [isPolling, startPolling] = useTransition();
 
   const beginProcessing = useCallback(
     (resumeId: string) => {
@@ -155,13 +156,17 @@ export function ResumeWorkflow({
   }, [beginProcessing, resume]);
 
   useEffect(() => {
-    if (resume?.status !== "processing") {
+    if (resume?.status !== "processing" || isWorking) {
       return;
     }
 
-    const interval = window.setInterval(() => router.refresh(), 3_000);
+    const interval = window.setInterval(() => {
+      if (!isPolling) {
+        startPolling(() => router.refresh());
+      }
+    }, 3_000);
     return () => window.clearInterval(interval);
-  }, [resume?.status, router]);
+  }, [isPolling, isWorking, resume?.status, router]);
 
   function chooseFile(file: File | null) {
     if (!file) {

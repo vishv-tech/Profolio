@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import {
   runWithModelFallback,
   type ModelAttemptResult,
+  type ModelAttemptStart,
 } from "@/lib/ai/model-fallback";
 
 export const GEMINI_RESUME_MODELS = [
@@ -46,6 +47,11 @@ export function requestWithGeminiAvailabilityFallback<TValue>(
   ) => Promise<TValue>,
   options: {
     onAttempt?: (result: ModelAttemptResult<GeminiResumeModel>) => void;
+    onAttemptStart?: (attempt: ModelAttemptStart<GeminiResumeModel>) => void;
+    onFallback?: (
+      unavailableModel: GeminiResumeModel,
+      nextModel: GeminiResumeModel,
+    ) => void;
     overallSignal?: AbortSignal;
   } = {},
 ) {
@@ -55,12 +61,17 @@ export function requestWithGeminiAvailabilityFallback<TValue>(
     attemptTimeoutMs: GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
     models: GEMINI_RESUME_MODELS,
     onAttempt: options.onAttempt,
+    onAttemptStart: options.onAttemptStart,
     onFallback: (unavailableModel, nextModel) => {
       if (process.env.NODE_ENV === "development") {
-        console.warn(
-          `[resume-extraction] ${unavailableModel} unavailable, trying ${nextModel}`,
-        );
+        console.warn("[resume-extraction]", {
+          stage: "model-fallback",
+          fromModel: unavailableModel,
+          toModel: nextModel,
+        });
       }
+
+      options.onFallback?.(unavailableModel, nextModel);
     },
     overallSignal: options.overallSignal,
     request: (model, signal) => request(client, model, signal),
