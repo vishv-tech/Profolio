@@ -1,8 +1,18 @@
 import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 import type { GeminiResumeExtraction } from "@/lib/ai/resume-schema";
-import type { LinkType, PortfolioData } from "@/types/portfolio";
+import {
+  mergeResumeLinks,
+  normalizeExternalUrl,
+  type ResumeSourceLink,
+} from "@/lib/resumes/links";
+import type { PortfolioData } from "@/types/portfolio";
 
 type IdFactory = () => string;
+
+type NormalizeResumeOptions = {
+  createId?: IdFactory;
+  deterministicLinks?: readonly ResumeSourceLink[];
+};
 
 function cleanText(value: string) {
   return value.trim();
@@ -12,65 +22,18 @@ function cleanList(values: string[]) {
   return values.map(cleanText).filter(Boolean);
 }
 
-function hostnameForLink(value: string) {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return "";
-  }
-
-  try {
-    const url = new URL(
-      /^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)
-        ? trimmed
-        : `https://${trimmed}`,
-    );
-
-    return url.hostname.toLowerCase().replace(/^www\./, "");
-  } catch {
-    return "";
-  }
+function cleanExternalUrl(value: string) {
+  return normalizeExternalUrl(value) ?? "";
 }
 
-function normalizeLinkType(type: LinkType, url: string): LinkType {
-  const hostname = hostnameForLink(url);
-
-  if (hostname === "linkedin.com" || hostname.endsWith(".linkedin.com")) {
-    return "linkedin";
-  }
-
-  if (hostname === "github.com" || hostname.endsWith(".github.com")) {
-    return "github";
-  }
-
-  if (hostname === "behance.net" || hostname.endsWith(".behance.net")) {
-    return "behance";
-  }
-
-  if (hostname === "dribbble.com" || hostname.endsWith(".dribbble.com")) {
-    return "dribbble";
-  }
-
-  if (hostname === "medium.com" || hostname.endsWith(".medium.com")) {
-    return "medium";
-  }
-
-  if (
-    hostname === "youtube.com" ||
-    hostname.endsWith(".youtube.com") ||
-    hostname === "youtu.be"
-  ) {
-    return "youtube";
-  }
-
-  return type;
-}
-
-export function normalizeResumeExtraction(
+export function buildPortfolioFromResumeExtraction(
   extraction: GeminiResumeExtraction,
-  createId: IdFactory = () => crypto.randomUUID(),
+  {
+    createId = () => crypto.randomUUID(),
+    deterministicLinks = [],
+  }: NormalizeResumeOptions = {},
 ): PortfolioData {
-  const portfolio: PortfolioData = {
+  return {
     personal: {
       fullName: cleanText(extraction.personal.fullName),
       headline: cleanText(extraction.personal.headline),
@@ -109,8 +72,8 @@ export function normalizeResumeExtraction(
       description: cleanText(item.description),
       technologies: cleanList(item.technologies),
       highlights: cleanList(item.highlights),
-      projectUrl: cleanText(item.projectUrl),
-      githubUrl: cleanText(item.githubUrl),
+      projectUrl: cleanExternalUrl(item.projectUrl),
+      githubUrl: cleanExternalUrl(item.githubUrl),
       startDate: cleanText(item.startDate),
       endDate: cleanText(item.endDate),
     })),
@@ -133,14 +96,9 @@ export function normalizeResumeExtraction(
       issueDate: cleanText(item.issueDate),
       expiryDate: cleanText(item.expiryDate),
       credentialId: cleanText(item.credentialId),
-      credentialUrl: cleanText(item.credentialUrl),
+      credentialUrl: cleanExternalUrl(item.credentialUrl),
     })),
-    links: extraction.links.map((item) => ({
-      id: createId(),
-      type: normalizeLinkType(item.type, item.url),
-      label: cleanText(item.label),
-      url: cleanText(item.url),
-    })),
+    links: mergeResumeLinks(deterministicLinks, extraction.links, createId),
     languages: extraction.languages.map((item) => ({
       id: createId(),
       name: cleanText(item.name),
@@ -159,6 +117,13 @@ export function normalizeResumeExtraction(
       })),
     })),
   };
+}
 
-  return PortfolioDataSchema.parse(portfolio);
+export function normalizeResumeExtraction(
+  extraction: GeminiResumeExtraction,
+  options: NormalizeResumeOptions = {},
+) {
+  return PortfolioDataSchema.parse(
+    buildPortfolioFromResumeExtraction(extraction, options),
+  );
 }

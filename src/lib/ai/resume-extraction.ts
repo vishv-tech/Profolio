@@ -1,12 +1,13 @@
 import "server-only";
 
+import type { Part } from "@google/genai";
 import { ZodError } from "zod";
 
 import {
-  GEMINI_REQUEST_TIMEOUT_MS,
+  GEMINI_OVERALL_TIMEOUT_MS,
   requestWithGeminiAvailabilityFallback,
 } from "@/lib/ai/gemini";
-import { normalizeResumeExtraction } from "@/lib/ai/normalize-portfolio";
+import { buildPortfolioFromResumeExtraction } from "@/lib/ai/normalize-portfolio";
 import {
   createResumeExtractionPrompt,
   RESUME_EXTRACTION_SYSTEM_PROMPT,
@@ -16,6 +17,9 @@ import {
   parseGeminiResumeExtraction,
   type GeminiExtractionValidationIssue,
 } from "@/lib/ai/resume-schema";
+import { parseResumePdf, type ResumePdfSource } from "@/lib/resumes/resume-source";
+import type { ResumeProcessingTiming } from "@/lib/resumes/timing";
+import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 import type { PortfolioData } from "@/types/portfolio";
 
 export type ResumeExtractionStage =
@@ -23,6 +27,7 @@ export type ResumeExtractionStage =
   | "database-claim"
   | "storage-download"
   | "stored-pdf-validation"
+  | "pdf-deterministic-parse"
   | "gemini-request"
   | "response-json"
   | "extraction-schema"
@@ -35,6 +40,26 @@ export type ResumeExtractionStage =
 type ResumeExtractionErrorOptions = {
   cause?: unknown;
   issues?: GeminiExtractionValidationIssue[];
+};
+
+type PreparedResumeSource =
+  | { kind: "pdf"; base64: string }
+  | { kind: "text"; text: string };
+
+type ExtractPortfolioOptions = {
+  timing?: ResumeProcessingTiming;
+};
+
+const EMPTY_PDF_SOURCE: ResumePdfSource = {
+  diagnostics: {
+    annotationPageFailures: 0,
+    pageFailures: 0,
+    textPageFailures: 0,
+  },
+  links: [],
+  pageCount: 0,
+  text: "",
+  useTextForGemini: false,
 };
 
 export class ResumeExtractionError extends Error {
@@ -78,7 +103,7 @@ function safeStatusOrCode(value: unknown) {
 
 function redactSensitiveText(value: string) {
   let redacted = value.replace(
-    /([?&](?:key|api_key)=)[^&\s]+/gi,
+    /([?&](?:key|api_key)=)[^&\s]+/giu,
     "$1[redacted]",
   );
   const apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -156,49 +181,64 @@ export function logResumeExtractionError(
   });
 }
 
+function sourcePart(source: PreparedResumeSource): Part {
+  if (source.kind === "text") {
+    return {
+      text: `--- BEGIN UNTRUSTED RESUME TEXT ---\n${source.text}\n--- END UNTRUSTED RESUME TEXT ---`,
+    };
+  }
+
+  return {
+    inlineData: {
+      data: source.base64,
+      mimeType: "application/pdf",
+    },
+  };
+}
+
 async function requestExtraction(
-  pdfBytes: Uint8Array,
+  source: PreparedResumeSource,
   improveWithAi: boolean,
   repairAttempt: boolean,
+  overallSignal: AbortSignal,
+  timing?: ResumeProcessingTiming,
 ) {
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    GEMINI_REQUEST_TIMEOUT_MS,
-  );
+  const parts: Part[] = [
+    {
+      text: createResumeExtractionPrompt(
+        improveWithAi,
+        repairAttempt,
+        source.kind,
+      ),
+    },
+    sourcePart(source),
+  ];
 
   try {
     const { model, value: response } =
-      await requestWithGeminiAvailabilityFallback((client, selectedModel) =>
-        client.models.generateContent({
-          model: selectedModel,
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: createResumeExtractionPrompt(
-                    improveWithAi,
-                    repairAttempt,
-                  ),
-                },
-                {
-                  inlineData: {
-                    data: Buffer.from(pdfBytes).toString("base64"),
-                    mimeType: "application/pdf",
-                  },
-                },
-              ],
+      await requestWithGeminiAvailabilityFallback(
+        (client, selectedModel, attemptSignal) =>
+          client.models.generateContent({
+            model: selectedModel,
+            contents: [{ role: "user", parts }],
+            config: {
+              abortSignal: attemptSignal,
+              maxOutputTokens: 32_768,
+              responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
+              responseMimeType: "application/json",
+              systemInstruction: RESUME_EXTRACTION_SYSTEM_PROMPT,
             },
-          ],
-          config: {
-            abortSignal: controller.signal,
-            maxOutputTokens: 32_768,
-            responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
-            responseMimeType: "application/json",
-            systemInstruction: RESUME_EXTRACTION_SYSTEM_PROMPT,
+          }),
+        {
+          onAttempt: (result) => {
+            timing?.record(
+              `gemini-${result.model}`,
+              result.durationMs,
+              `${repairAttempt ? "repair-" : ""}${result.outcome}`,
+            );
           },
-        }),
+          overallSignal,
+        },
       );
 
     return {
@@ -211,51 +251,133 @@ async function requestExtraction(
       "The Gemini request failed.",
       { cause: error },
     );
-  } finally {
-    clearTimeout(timeout);
   }
+}
+
+function prepareGeminiSource(
+  source: ResumePdfSource,
+  pdfBytes: Uint8Array,
+): PreparedResumeSource {
+  return source.useTextForGemini
+    ? { kind: "text", text: source.text }
+    : { kind: "pdf", base64: Buffer.from(pdfBytes).toString("base64") };
+}
+
+function logPdfSourceDiagnostics(source: ResumePdfSource) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info("[resume-extraction]", {
+    stage: "pdf-deterministic-parse",
+    annotationLinks: source.links.length,
+    inputKind: source.useTextForGemini ? "text" : "pdf",
+    pageCount: source.pageCount,
+    textCharacters: source.text.length,
+    ...source.diagnostics,
+  });
 }
 
 export async function extractPortfolioFromPdf(
   pdfBytes: Uint8Array,
   improveWithAi: boolean,
+  { timing }: ExtractPortfolioOptions = {},
 ): Promise<PortfolioData> {
+  let source = EMPTY_PDF_SOURCE;
+
+  try {
+    source = timing
+      ? await timing.measure("pdf-deterministic-parse", () =>
+          parseResumePdf(pdfBytes),
+        )
+      : await parseResumePdf(pdfBytes);
+    logPdfSourceDiagnostics(source);
+  } catch (error) {
+    // Local parsing is an enhancement; Gemini's existing PDF path remains the fallback.
+    logResumeExtractionError("pdf-deterministic-parse", error);
+  }
+
+  const preparedSource = timing
+    ? timing.measureSync("gemini-input-preparation", () =>
+        prepareGeminiSource(source, pdfBytes),
+      )
+    : prepareGeminiSource(source, pdfBytes);
+  const overallController = new AbortController();
+  const overallTimeout = setTimeout(
+    () =>
+      overallController.abort(
+        new Error("Gemini resume extraction exceeded its overall time budget."),
+      ),
+    GEMINI_OVERALL_TIMEOUT_MS,
+  );
   let lastFailure: Exclude<
     ReturnType<typeof parseGeminiResumeExtraction>,
     { success: true }
   > | null = null;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const response = await requestExtraction(
-      pdfBytes,
-      improveWithAi,
-      attempt === 1,
-    );
-    const parsed = parseGeminiResumeExtraction(response.text);
+  try {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const response = await requestExtraction(
+        preparedSource,
+        improveWithAi,
+        attempt === 1,
+        overallController.signal,
+        timing,
+      );
+      const parsed = timing
+        ? timing.measureSync("json-parse", () =>
+            parseGeminiResumeExtraction(response.text),
+          )
+        : parseGeminiResumeExtraction(response.text);
 
-    if (parsed.success) {
-      try {
-        const portfolio = normalizeResumeExtraction(parsed.data);
+      if (parsed.success) {
+        let portfolio: PortfolioData;
 
-        if (process.env.NODE_ENV === "development") {
-          console.info(
-            `[resume-extraction] extraction succeeded with ${response.model}`,
+        try {
+          portfolio = timing
+            ? timing.measureSync("portfolio-normalization", () =>
+                buildPortfolioFromResumeExtraction(parsed.data, {
+                  deterministicLinks: source.links,
+                }),
+              )
+            : buildPortfolioFromResumeExtraction(parsed.data, {
+                deterministicLinks: source.links,
+              });
+        } catch (error) {
+          throw new ResumeExtractionError(
+            "normalization",
+            "The extracted resume could not be normalized.",
+            { cause: error },
           );
         }
 
-        return portfolio;
-      } catch (error) {
-        throw new ResumeExtractionError(
-          error instanceof ZodError
-            ? "portfolio-validation"
-            : "normalization",
-          "The extracted resume could not be normalized.",
-          { cause: error },
-        );
-      }
-    }
+        try {
+          const validated = timing
+            ? timing.measureSync("portfolio-validation", () =>
+                PortfolioDataSchema.parse(portfolio),
+              )
+            : PortfolioDataSchema.parse(portfolio);
 
-    lastFailure = parsed;
+          if (process.env.NODE_ENV === "development") {
+            console.info(
+              `[resume-extraction] extraction succeeded with ${response.model}`,
+            );
+          }
+
+          return validated;
+        } catch (error) {
+          throw new ResumeExtractionError(
+            "portfolio-validation",
+            "The extracted resume did not match PortfolioData.",
+            { cause: error },
+          );
+        }
+      }
+
+      lastFailure = parsed;
+    }
+  } finally {
+    clearTimeout(overallTimeout);
   }
 
   if (lastFailure?.reason === "schema") {

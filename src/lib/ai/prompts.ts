@@ -48,19 +48,24 @@ percentages, revenue, user counts, performance claims, or team leadership.
 export function createResumeExtractionPrompt(
   improveWithAi: boolean,
   repairAttempt = false,
+  sourceKind: "pdf" | "text" = "pdf",
 ) {
   const repairInstruction = repairAttempt
-    ? `\nThis is the single repair attempt. The previous response did not match the required structure. Re-read the PDF and return one complete JSON object that exactly matches the schema. Do not omit required fields.`
+    ? `\nThis is the single repair attempt. The previous response did not match the required structure. Re-read the resume source and return one complete JSON object that exactly matches the schema. Do not omit required fields.`
     : "";
+  const sourceInstruction =
+    sourceKind === "text"
+      ? `Read the extracted resume text supplied after these instructions. Its line breaks reflect the PDF's available reading order, but visual layout may be approximate.`
+      : "Read the attached PDF resume.";
 
   return `
-Read the attached PDF resume and extract every supported entry. Support zero or
-many experiences, education entries, projects, achievements, certifications,
-links, languages, and custom sections. Put useful content that does not fit a
-standard section into customSections. Extract achievements, certifications,
-languages, and interests only when explicitly present. Group skills
-conservatively; use the category "Skills" when a more specific category is not
-supported by the document.
+${sourceInstruction} Extract every supported entry. Support zero or many
+experiences, education entries, projects, achievements, certifications, links,
+languages, and custom sections. Put useful content that does not fit a standard
+section into customSections. Extract achievements, certifications, languages,
+and interests only when explicitly present. Group skills conservatively; use
+the category "Skills" when a more specific category is not supported by the
+document.
 
 Recognize professional links and use only the allowed link types. Keep project
 and GitHub URLs on their matching project when the relationship is clear.
