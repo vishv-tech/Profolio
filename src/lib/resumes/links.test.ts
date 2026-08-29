@@ -2,10 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  classifyResumeLink,
   extractLinksFromPdfAnnotations,
   extractVisibleResumeLinks,
   mergeResumeLinks,
+  normalizeExternalUrl,
 } from "@/lib/resumes/links";
+
+test("normalizes and classifies bare LinkedIn and GitHub profile URLs", () => {
+  assert.equal(
+    normalizeExternalUrl("linkedin.com/in/test"),
+    "https://linkedin.com/in/test",
+  );
+  assert.equal(classifyResumeLink("linkedin.com/in/test"), "linkedin");
+  assert.equal(classifyResumeLink("https://github.com/test"), "github");
+});
 
 test("classifies supported external PDF annotation links", () => {
   const links = extractLinksFromPdfAnnotations([
@@ -54,6 +65,19 @@ test("uses an annotation's visible Portfolio label for a personal site", () => {
   ]);
 });
 
+test("uses PDF.js unsafeUrl when an annotation URI has no scheme", () => {
+  assert.deepEqual(
+    extractLinksFromPdfAnnotations([{ unsafeUrl: "github.com/test" }]),
+    [
+      {
+        label: "GitHub",
+        type: "github",
+        url: "https://github.com/test",
+      },
+    ],
+  );
+});
+
 test("rejects empty, local, credentialed, and unsafe annotation URLs", () => {
   const links = extractLinksFromPdfAnnotations([
     {},
@@ -71,6 +95,10 @@ test("rejects empty, local, credentialed, and unsafe annotation URLs", () => {
   ]);
 
   assert.deepEqual(links, []);
+});
+
+test("a PDF with no annotations produces no links without failing", () => {
+  assert.deepEqual(extractLinksFromPdfAnnotations([]), []);
 });
 
 test("deduplicates duplicate annotations and identical visible URLs", () => {
@@ -139,5 +167,63 @@ test("keeps deterministic links when Gemini omits them and filters unsafe Gemini
   assert.deepEqual(
     merged.map(({ type }) => type),
     ["linkedin", "github"],
+  );
+});
+
+test("prefers an exact PDF profile over an incomplete Gemini provider URL", () => {
+  let id = 0;
+  const merged = mergeResumeLinks(
+    extractLinksFromPdfAnnotations([
+      { url: "https://github.com/exact-profile" },
+    ]),
+    [
+      { label: "GitHub", type: "github", url: "github.com" },
+      {
+        label: "Personal site",
+        type: "portfolio",
+        url: "https://portfolio.dev",
+      },
+    ],
+    () => `link-${(id += 1)}`,
+  );
+
+  assert.deepEqual(
+    merged.map(({ label, type, url }) => ({ label, type, url })),
+    [
+      {
+        label: "GitHub",
+        type: "github",
+        url: "https://github.com/exact-profile",
+      },
+      {
+        label: "Portfolio",
+        type: "portfolio",
+        url: "https://portfolio.dev/",
+      },
+    ],
+  );
+});
+
+test("keeps a distinct complete Gemini profile alongside a PDF profile", () => {
+  const merged = mergeResumeLinks(
+    extractLinksFromPdfAnnotations([
+      { url: "https://linkedin.com/in/pdf-profile" },
+    ]),
+    [
+      {
+        label: "LinkedIn",
+        type: "linkedin",
+        url: "https://linkedin.com/in/existing-profile",
+      },
+    ],
+    () => crypto.randomUUID(),
+  );
+
+  assert.deepEqual(
+    merged.map(({ url }) => url),
+    [
+      "https://linkedin.com/in/pdf-profile",
+      "https://linkedin.com/in/existing-profile",
+    ],
   );
 });

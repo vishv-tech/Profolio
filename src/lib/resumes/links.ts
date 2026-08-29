@@ -314,6 +314,44 @@ function deduplicationKey(urlValue: string) {
   return url.toString();
 }
 
+function isIncompleteKnownProfile(
+  candidate: LinkCandidate,
+  deterministicLinks: readonly ResumeSourceLink[],
+) {
+  const candidateUrl = normalizeExternalUrl(candidate.url);
+
+  if (!candidateUrl) {
+    return false;
+  }
+
+  const candidateType = classifyResumeLink(
+    candidateUrl,
+    candidate.type ?? "other",
+    candidate.label,
+  );
+
+  if (candidateType !== "github" && candidateType !== "linkedin") {
+    return false;
+  }
+
+  const candidatePath = new URL(candidateUrl).pathname.replace(/\/+$/u, "");
+
+  if (candidatePath) {
+    return false;
+  }
+
+  return deterministicLinks.some((link) => {
+    const deterministicUrl = normalizeExternalUrl(link.url);
+
+    return (
+      deterministicUrl !== null &&
+      classifyResumeLink(deterministicUrl, link.type, link.label) ===
+        candidateType &&
+      new URL(deterministicUrl).pathname.replace(/\/+$/u, "") !== ""
+    );
+  });
+}
+
 export function deduplicateResumeSourceLinks(
   candidates: readonly LinkCandidate[],
 ) {
@@ -353,6 +391,8 @@ export function mergeResumeLinks(
 ) {
   return deduplicateResumeSourceLinks([
     ...deterministicLinks,
-    ...geminiLinks,
+    ...geminiLinks.filter(
+      (link) => !isIncompleteKnownProfile(link, deterministicLinks),
+    ),
   ]).map((link) => ({ id: createId(), ...link }));
 }
