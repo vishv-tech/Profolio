@@ -12,6 +12,7 @@ import { requireActiveUser } from "@/lib/auth/guards";
 import { saveReviewedResumeAsDraft } from "@/lib/portfolios/mutations";
 import { createPortfolioSlugBase } from "@/lib/portfolios/slug";
 import { parseStoredPortfolio, toDatabaseJson } from "@/lib/resumes/json";
+import { ResumeProcessingTiming } from "@/lib/resumes/timing";
 import {
   RESUME_STATUSES,
   type ProcessResumeResult,
@@ -49,205 +50,185 @@ function invalidResumeResult(): ProcessResumeResult {
 export async function uploadResume(
   formData: FormData,
 ): Promise<UploadResumeResult> {
-  const user = await requireActiveUser();
-  const validation = await validateResumeUpload(formData.get("resume"));
+  const timing = new ResumeProcessingTiming("resume-upload");
+  let outcome: "failed" | "rejected" | "success" = "failed";
 
-  if (!validation.success) {
-    return validation;
-  }
+  try {
+    const user = await requireActiveUser();
+    const validation = await timing.measure("pdf-validation", () =>
+      validateResumeUpload(formData.get("resume")),
+    );
 
-  const improveWithAi = formData.get("improveWithAi") === "on";
-  const supabase = await createClient();
-  const storagePath = `${user.userId}/${crypto.randomUUID()}.pdf`;
-  const { bytes, fileName } = validation.data;
-  const { error: uploadError } = await supabase.storage
-    .from(RESUME_BUCKET)
-    .upload(storagePath, bytes, {
-      cacheControl: "3600",
-      contentType: "application/pdf",
-      upsert: false,
-    });
+    if (!validation.success) {
+      outcome = "rejected";
+      return validation;
+    }
 
-  if (uploadError) {
+    const improveWithAi = formData.get("improveWithAi") === "on";
+    const supabase = await createClient();
+    const storagePath = `${user.userId}/${crypto.randomUUID()}.pdf`;
+    const { bytes, fileName } = validation.data;
+    const { error: uploadError } = await timing.measure(
+      "storage-upload",
+      () =>
+        supabase.storage.from(RESUME_BUCKET).upload(storagePath, bytes, {
+          cacheControl: "3600",
+          contentType: "application/pdf",
+          upsert: false,
+        }),
+    );
+
+    if (uploadError) {
+      return {
+        success: false,
+        message: "The resume could not be uploaded. Please try again.",
+      };
+    }
+
+    const { data, error: insertError } = await timing.measure(
+      "database-write",
+      () =>
+        supabase
+          .from("resumes")
+          .insert({
+            extracted_data: null,
+            file_name: fileName,
+            file_path: storagePath,
+            improve_with_ai: improveWithAi,
+            status: "uploaded",
+            user_id: user.userId,
+          })
+          .select("id, file_name, status, improve_with_ai")
+          .single(),
+    );
+
+    if (insertError || !data) {
+      await supabase.storage.from(RESUME_BUCKET).remove([storagePath]);
+
+      return {
+        success: false,
+        message: "The upload could not be recorded. Please try again.",
+      };
+    }
+
+    timing.measureSync("redirect-preparation", () => revalidatePath("/upload"));
+    outcome = "success";
+
     return {
-      success: false,
-      message: "The resume could not be uploaded. Please try again.",
+      success: true,
+      resume: {
+        id: data.id,
+        fileName: data.file_name,
+        status: "uploaded",
+        improveWithAi: data.improve_with_ai,
+      },
     };
+  } finally {
+    timing.finish(outcome);
   }
-
-  const { data, error: insertError } = await supabase
-    .from("resumes")
-    .insert({
-      extracted_data: null,
-      file_name: fileName,
-      file_path: storagePath,
-      improve_with_ai: improveWithAi,
-      status: "uploaded",
-      user_id: user.userId,
-    })
-    .select("id, file_name, status, improve_with_ai")
-    .single();
-
-  if (insertError || !data) {
-    await supabase.storage.from(RESUME_BUCKET).remove([storagePath]);
-
-    return {
-      success: false,
-      message: "The upload could not be recorded. Please try again.",
-    };
-  }
-
-  revalidatePath("/upload");
-
-  return {
-    success: true,
-    resume: {
-      id: data.id,
-      fileName: data.file_name,
-      status: "uploaded",
-      improveWithAi: data.improve_with_ai,
-    },
-  };
 }
 
 export async function processResume(
   resumeId: string,
 ): Promise<ProcessResumeResult> {
-  const user = await requireActiveUser();
-  const parsedId = ResumeIdSchema.safeParse(resumeId);
-
-  if (!parsedId.success) {
-    return invalidResumeResult();
-  }
-
-  const supabase = await createClient();
-  const { data: existing, error: readError } = await supabase
-    .from("resumes")
-    .select(
-      "id, file_path, status, improve_with_ai, extracted_data, updated_at",
-    )
-    .eq("id", parsedId.data)
-    .eq("user_id", user.userId)
-    .maybeSingle();
-
-  if (readError || !existing) {
-    if (readError) {
-      logResumeExtractionError("database-read", readError);
-    }
-
-    return invalidResumeResult();
-  }
-
-  const parsedStatus = ResumeStatusSchema.safeParse(existing.status);
-
-  if (!parsedStatus.success) {
-    return invalidResumeResult();
-  }
-
-  const status: ResumeStatus = parsedStatus.data;
-
-  if (status === "completed") {
-    const portfolio = parseStoredPortfolio(existing.extracted_data);
-
-    return portfolio
-      ? { success: true, portfolio }
-      : {
-          success: false,
-          message: PROCESSING_ERROR_MESSAGE,
-          retryable: false,
-          status,
-        };
-  }
-
-  if (
-    status === "processing" &&
-    !isProcessingClaimStale(existing.updated_at)
-  ) {
-    return {
-      success: false,
-      message: PROCESSING_MESSAGE,
-      retryable: false,
-      status,
-    };
-  }
-
-  const { data: claim, error: claimError } = await supabase
-    .from("resumes")
-    .update({ extracted_data: null, status: "processing" })
-    .eq("id", existing.id)
-    .eq("user_id", user.userId)
-    .eq("status", existing.status)
-    .eq("updated_at", existing.updated_at)
-    .select("id, file_path, improve_with_ai, updated_at")
-    .maybeSingle();
-
-  if (claimError || !claim) {
-    logResumeExtractionError(
-      "database-claim",
-      claimError ??
-        new ResumeExtractionError(
-          "database-claim",
-          "The processing claim was not acquired.",
-        ),
-    );
-
-    return {
-      success: false,
-      message: PROCESSING_MESSAGE,
-      retryable: false,
-      status: "processing",
-    };
-  }
+  const timing = new ResumeProcessingTiming("resume-processing");
+  let outcome: "failed" | "rejected" | "success" = "failed";
 
   try {
-    const { data: resumeFile, error: downloadError } = await supabase.storage
-      .from(RESUME_BUCKET)
-      .download(claim.file_path);
+    const user = await requireActiveUser();
+    const parsedId = ResumeIdSchema.safeParse(resumeId);
 
-    if (downloadError || !resumeFile) {
-      throw new ResumeExtractionError(
-        "storage-download",
-        "Resume download failed.",
-        { cause: downloadError },
-      );
+    if (!parsedId.success) {
+      outcome = "rejected";
+      return invalidResumeResult();
     }
 
-    const pdfBytes = new Uint8Array(await resumeFile.arrayBuffer());
-
-    if (!validateStoredPdf(pdfBytes)) {
-      throw new ResumeExtractionError(
-        "stored-pdf-validation",
-        "Stored resume validation failed.",
-      );
-    }
-
-    const portfolio = await extractPortfolioFromPdf(
-      pdfBytes,
-      claim.improve_with_ai,
+    const supabase = await createClient();
+    const { data: existing, error: readError } = await timing.measure(
+      "database-read",
+      () =>
+        supabase
+          .from("resumes")
+          .select(
+            "id, file_path, status, improve_with_ai, extracted_data, updated_at",
+          )
+          .eq("id", parsedId.data)
+          .eq("user_id", user.userId)
+          .maybeSingle(),
     );
-    const { data: completed, error: completeError } = await supabase
-      .from("resumes")
-      .update({
-        extracted_data: toDatabaseJson(portfolio),
-        status: "completed",
-      })
-      .eq("id", claim.id)
-      .eq("user_id", user.userId)
-      .eq("status", "processing")
-      .eq("updated_at", claim.updated_at)
-      .select("id")
-      .maybeSingle();
 
-    if (completeError || !completed) {
+    if (readError || !existing) {
+      if (readError) {
+        logResumeExtractionError("database-read", readError);
+      }
+
+      outcome = "rejected";
+      return invalidResumeResult();
+    }
+
+    const parsedStatus = ResumeStatusSchema.safeParse(existing.status);
+
+    if (!parsedStatus.success) {
+      outcome = "rejected";
+      return invalidResumeResult();
+    }
+
+    const status: ResumeStatus = parsedStatus.data;
+
+    if (status === "completed") {
+      const portfolio = timing.measureSync("portfolio-validation", () =>
+        parseStoredPortfolio(existing.extracted_data),
+      );
+      outcome = portfolio ? "success" : "failed";
+
+      return portfolio
+        ? { success: true, portfolio }
+        : {
+            success: false,
+            message: PROCESSING_ERROR_MESSAGE,
+            retryable: false,
+            status,
+          };
+    }
+
+    if (
+      status === "processing" &&
+      !isProcessingClaimStale(existing.updated_at)
+    ) {
+      outcome = "rejected";
+      return {
+        success: false,
+        message: PROCESSING_MESSAGE,
+        retryable: false,
+        status,
+      };
+    }
+
+    const { data: claim, error: claimError } = await timing.measure(
+      "database-claim",
+      () =>
+        supabase
+          .from("resumes")
+          .update({ extracted_data: null, status: "processing" })
+          .eq("id", existing.id)
+          .eq("user_id", user.userId)
+          .eq("status", existing.status)
+          .eq("updated_at", existing.updated_at)
+          .select("id, file_path, improve_with_ai, updated_at")
+          .maybeSingle(),
+    );
+
+    if (claimError || !claim) {
       logResumeExtractionError(
-        "database-completion",
-        completeError ??
+        "database-claim",
+        claimError ??
           new ResumeExtractionError(
-            "database-completion",
-            "The completed extraction was not persisted.",
+            "database-claim",
+            "The processing claim was not acquired.",
           ),
       );
 
+      outcome = "rejected";
       return {
         success: false,
         message: PROCESSING_MESSAGE,
@@ -256,33 +237,113 @@ export async function processResume(
       };
     }
 
-    revalidatePath("/upload");
-    return { success: true, portfolio };
-  } catch (error) {
-    logResumeExtractionError("process-resume", error);
+    try {
+      const pdfBytes = await timing.measure("storage-download", async () => {
+        const { data: resumeFile, error: downloadError } =
+          await supabase.storage
+            .from(RESUME_BUCKET)
+            .download(claim.file_path);
 
-    const { error: failureUpdateError } = await supabase
-      .from("resumes")
-      .update({ extracted_data: null, status: "failed" })
-      .eq("id", claim.id)
-      .eq("user_id", user.userId)
-      .eq("status", "processing")
-      .eq("updated_at", claim.updated_at);
+        if (downloadError || !resumeFile) {
+          throw new ResumeExtractionError(
+            "storage-download",
+            "Resume download failed.",
+            { cause: downloadError },
+          );
+        }
 
-    if (failureUpdateError) {
-      logResumeExtractionError(
-        "database-failure-update",
-        failureUpdateError,
+        return new Uint8Array(await resumeFile.arrayBuffer());
+      });
+      const validPdf = timing.measureSync("stored-pdf-validation", () =>
+        validateStoredPdf(pdfBytes),
       );
-    }
 
-    revalidatePath("/upload");
-    return {
-      success: false,
-      message: PROCESSING_ERROR_MESSAGE,
-      retryable: true,
-      status: "failed",
-    };
+      if (!validPdf) {
+        throw new ResumeExtractionError(
+          "stored-pdf-validation",
+          "Stored resume validation failed.",
+        );
+      }
+
+      const portfolio = await extractPortfolioFromPdf(
+        pdfBytes,
+        claim.improve_with_ai,
+        { timing },
+      );
+      const { data: completed, error: completeError } = await timing.measure(
+        "database-write",
+        () =>
+          supabase
+            .from("resumes")
+            .update({
+              extracted_data: toDatabaseJson(portfolio),
+              status: "completed",
+            })
+            .eq("id", claim.id)
+            .eq("user_id", user.userId)
+            .eq("status", "processing")
+            .eq("updated_at", claim.updated_at)
+            .select("id")
+            .maybeSingle(),
+      );
+
+      if (completeError || !completed) {
+        logResumeExtractionError(
+          "database-completion",
+          completeError ??
+            new ResumeExtractionError(
+              "database-completion",
+              "The completed extraction was not persisted.",
+            ),
+        );
+
+        return {
+          success: false,
+          message: PROCESSING_MESSAGE,
+          retryable: false,
+          status: "processing",
+        };
+      }
+
+      timing.measureSync("redirect-preparation", () =>
+        revalidatePath("/upload"),
+      );
+      outcome = "success";
+      return { success: true, portfolio };
+    } catch (error) {
+      logResumeExtractionError("process-resume", error);
+
+      const { error: failureUpdateError } = await timing.measure(
+        "database-failure-write",
+        () =>
+          supabase
+            .from("resumes")
+            .update({ extracted_data: null, status: "failed" })
+            .eq("id", claim.id)
+            .eq("user_id", user.userId)
+            .eq("status", "processing")
+            .eq("updated_at", claim.updated_at),
+      );
+
+      if (failureUpdateError) {
+        logResumeExtractionError(
+          "database-failure-update",
+          failureUpdateError,
+        );
+      }
+
+      timing.measureSync("redirect-preparation", () =>
+        revalidatePath("/upload"),
+      );
+      return {
+        success: false,
+        message: PROCESSING_ERROR_MESSAGE,
+        retryable: true,
+        status: "failed",
+      };
+    }
+  } finally {
+    timing.finish(outcome);
   }
 }
 

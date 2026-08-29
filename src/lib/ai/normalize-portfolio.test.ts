@@ -148,6 +148,86 @@ test("infers common link types without changing link content", () => {
   assert.equal(portfolio.links[0].url, "https://github.com/avery");
 });
 
+test("merges deterministic PDF links ahead of Gemini links and stays valid", () => {
+  const extraction = sparseExtraction();
+  extraction.links = [
+    {
+      type: "linkedin",
+      label: "LinkedIn profile",
+      url: "https://linkedin.com/in/avery/",
+    },
+  ];
+  let id = 0;
+  const portfolio = normalizeResumeExtraction(extraction, {
+    createId: () => `generated-${(id += 1)}`,
+    deterministicLinks: [
+      {
+        type: "linkedin",
+        label: "LinkedIn",
+        url: "https://linkedin.com/in/avery",
+      },
+      {
+        type: "github",
+        label: "GitHub",
+        url: "https://github.com/avery",
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    portfolio.links.map(({ label, type, url }) => ({ label, type, url })),
+    [
+      {
+        label: "LinkedIn",
+        type: "linkedin",
+        url: "https://linkedin.com/in/avery",
+      },
+      {
+        label: "GitHub",
+        type: "github",
+        url: "https://github.com/avery",
+      },
+    ],
+  );
+  assert.equal(PortfolioDataSchema.safeParse(portfolio).success, true);
+});
+
+test("removes unsafe Gemini URL fields during normalization", () => {
+  const extraction = sparseExtraction();
+  extraction.projects = [
+    {
+      name: "Example",
+      description: "Example project.",
+      technologies: [],
+      highlights: [],
+      projectUrl: "javascript://example.com/alert",
+      githubUrl: "https://github.com/avery/example",
+      startDate: "",
+      endDate: "",
+    },
+  ];
+  extraction.certifications = [
+    {
+      name: "Example certificate",
+      issuer: "Example",
+      issueDate: "",
+      expiryDate: "",
+      credentialId: "",
+      credentialUrl: "file:///private/certificate",
+    },
+  ];
+
+  const portfolio = normalizeResumeExtraction(extraction);
+
+  assert.equal(portfolio.projects[0].projectUrl, "");
+  assert.equal(
+    portfolio.projects[0].githubUrl,
+    "https://github.com/avery/example",
+  );
+  assert.equal(portfolio.certifications[0].credentialUrl, "");
+  assert.equal(PortfolioDataSchema.safeParse(portfolio).success, true);
+});
+
 test("strict extraction rejects Gemini-generated application IDs", () => {
   const invalid = {
     ...sparseExtraction(),

@@ -5,15 +5,34 @@ type ErrorSignals = {
 };
 
 type ModelFallbackOptions<TModel extends string, TValue> = {
+  attemptTimeoutMs?: number;
   models: readonly TModel[];
-  request: (model: TModel) => Promise<TValue>;
+  onAttempt?: (result: ModelAttemptResult<TModel>) => void;
   onFallback?: (unavailableModel: TModel, nextModel: TModel) => void;
+  overallSignal?: AbortSignal;
+  request: (model: TModel, signal: AbortSignal) => Promise<TValue>;
 };
 
 export type ModelFallbackResult<TModel extends string, TValue> = {
   model: TModel;
   value: TValue;
 };
+
+export type ModelAttemptResult<TModel extends string> = {
+  durationMs: number;
+  model: TModel;
+  outcome: "failed" | "success" | "timeout";
+};
+
+export class ModelAttemptTimeoutError extends Error {
+  constructor(
+    readonly model: string,
+    readonly timeoutMs: number,
+  ) {
+    super(`Gemini model attempt exceeded ${timeoutMs}ms.`);
+    this.name = "ModelAttemptTimeoutError";
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -89,6 +108,10 @@ function clearlySignalsTransientCapacity(message: string) {
 }
 
 export function isTransientGeminiAvailabilityError(error: unknown) {
+  if (error instanceof ModelAttemptTimeoutError) {
+    return true;
+  }
+
   const signals: ErrorSignals = { codes: [], messages: [], statuses: [] };
   collectErrorSignals(error, signals);
 
@@ -113,13 +136,85 @@ export function isTransientGeminiAvailabilityError(error: unknown) {
   );
 }
 
+async function requestWithAttemptTimeout<TModel extends string, TValue>(
+  model: TModel,
+  request: (model: TModel, signal: AbortSignal) => Promise<TValue>,
+  attemptTimeoutMs: number | undefined,
+  overallSignal: AbortSignal | undefined,
+) {
+  if (overallSignal?.aborted) {
+    throw overallSignal.reason ?? new Error("Gemini request was aborted.");
+  }
+
+  const attemptController = new AbortController();
+  let timedOut = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  let rejectOverall: ((reason?: unknown) => void) | undefined;
+
+  const abortAttempt = () => {
+    attemptController.abort(overallSignal?.reason);
+    rejectOverall?.(
+      overallSignal?.reason ?? new Error("Gemini request was aborted."),
+    );
+  };
+
+  const contenders: Promise<TValue>[] = [
+    request(model, attemptController.signal),
+  ];
+
+  if (overallSignal) {
+    contenders.push(
+      new Promise<TValue>((_, reject) => {
+        rejectOverall = reject;
+        overallSignal.addEventListener("abort", abortAttempt, { once: true });
+      }),
+    );
+  }
+
+  if (attemptTimeoutMs !== undefined) {
+    contenders.push(
+      new Promise<TValue>((_, reject) => {
+        timeout = setTimeout(() => {
+          timedOut = true;
+          const error = new ModelAttemptTimeoutError(model, attemptTimeoutMs);
+          attemptController.abort(error);
+          reject(error);
+        }, attemptTimeoutMs);
+      }),
+    );
+  }
+
+  try {
+    return await Promise.race(contenders);
+  } catch (error) {
+    if (overallSignal?.aborted) {
+      throw overallSignal.reason ?? error;
+    }
+
+    if (timedOut) {
+      throw new ModelAttemptTimeoutError(model, attemptTimeoutMs!);
+    }
+
+    throw error;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+
+    overallSignal?.removeEventListener("abort", abortAttempt);
+  }
+}
+
 export async function runWithModelFallback<
   TModel extends string,
   TValue,
 >({
+  attemptTimeoutMs,
   models,
+  onAttempt,
   request,
   onFallback,
+  overallSignal,
 }: ModelFallbackOptions<TModel, TValue>): Promise<
   ModelFallbackResult<TModel, TValue>
 > {
@@ -129,10 +224,33 @@ export async function runWithModelFallback<
 
   for (let index = 0; index < models.length; index += 1) {
     const model = models[index];
+    const startedAt = performance.now();
 
     try {
-      return { model, value: await request(model) };
+      const value = await requestWithAttemptTimeout(
+        model,
+        request,
+        attemptTimeoutMs,
+        overallSignal,
+      );
+      onAttempt?.({
+        durationMs: performance.now() - startedAt,
+        model,
+        outcome: "success",
+      });
+      return { model, value };
     } catch (error) {
+      const timedOut = error instanceof ModelAttemptTimeoutError;
+      onAttempt?.({
+        durationMs: performance.now() - startedAt,
+        model,
+        outcome: timedOut ? "timeout" : "failed",
+      });
+
+      if (overallSignal?.aborted) {
+        throw error;
+      }
+
       const nextModel = models[index + 1];
 
       if (!nextModel || !isTransientGeminiAvailabilityError(error)) {
