@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { HeartPulse, Stethoscope } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
@@ -29,13 +30,26 @@ export default function HealthcareProfessionalTheme({
       <div className={styles.clinicalFrame}>
         <header className={styles.clinicalHeader} data-reveal style={revealStyle(0)}>
           <PortfolioHeader config={config} data={data} />
-          <div className={styles.clinicalPulse} aria-hidden="true">+</div>
+          <div className={styles.clinicalPulse} aria-hidden="true">
+            <HeartPulse />
+          </div>
         </header>
+
+        <div className={styles.clinicalEcg} aria-hidden="true">
+          <span>CARE / PRACTICE / RECORD</span>
+          <svg viewBox="0 0 720 72" preserveAspectRatio="none">
+            <path
+              className={styles.clinicalEcgLine}
+              d="M0 38h174l20-18 22 43 28-56 26 31h150l18-14 18 28 24-45 25 31h215"
+            />
+          </svg>
+        </div>
 
         <div className={styles.clinicalBody}>
           <aside className={styles.clinicalRail}>
+            <Stethoscope aria-hidden="true" />
             <p className={styles.microLabel}>Professional record</p>
-            <p>Clear experience, education, credentials, and selected work from the verified portfolio record.</p>
+            <p>A focused view of experience, education, credentials, and selected work.</p>
           </aside>
 
           <main className={styles.clinicalSections}>
