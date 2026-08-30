@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { AuthIssueCode } from "@/lib/auth/outcomes";
+
 const EmailSchema = z
   .string()
   .trim()
@@ -14,6 +16,8 @@ export const LoginSchema = z.strictObject({
     .min(1, "Enter your password.")
     .max(128, "Password is too long."),
 });
+
+export const ConfirmationEmailSchema = z.strictObject({ email: EmailSchema });
 
 export const SignupSchema = z
   .strictObject({
@@ -54,6 +58,8 @@ export type AuthFieldErrors = Partial<
 export type AuthActionState = {
   status: "idle" | "error" | "success";
   message: string;
+  code?: AuthIssueCode;
+  email?: string;
   fieldErrors?: AuthFieldErrors;
 };
 

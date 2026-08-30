@@ -4,9 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { readAuthContext } from "@/lib/auth/guards";
+import {
+  authIssueMessage,
+  classifyAuthError,
+  resolveSignupProviderResult,
+  type AuthIssueCode,
+} from "@/lib/auth/outcomes";
 import { pathForUserRole } from "@/lib/auth/redirects";
 import {
   type AuthActionState,
+  ConfirmationEmailSchema,
   LoginSchema,
   SignupSchema,
   toFieldErrors,
@@ -53,6 +60,19 @@ async function signOutCurrentSession(
   await supabase.auth.signOut({ scope: "local" });
 }
 
+function authErrorState(
+  issue: AuthIssueCode,
+  context: "login" | "resend" | "signup",
+  email?: string,
+): AuthActionState {
+  return {
+    status: "error",
+    code: issue,
+    message: authIssueMessage(issue, context),
+    ...(email ? { email } : {}),
+  };
+}
+
 export async function login(
   _previousState: AuthActionState,
   formData: FormData,
@@ -81,10 +101,11 @@ export async function login(
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
     if (error) {
-      return {
-        status: "error",
-        message: "Invalid email or password.",
-      };
+      return authErrorState(
+        classifyAuthError(error),
+        "login",
+        parsed.data.email,
+      );
     }
 
     const result = await readAuthContext(supabase);
@@ -98,11 +119,8 @@ export async function login(
     } else {
       destination = pathForUserRole(result.context.profile);
     }
-  } catch {
-    return {
-      status: "error",
-      message: "Unable to log in right now. Please try again.",
-    };
+  } catch (error) {
+    return authErrorState(classifyAuthError(error), "login", parsed.data.email);
   }
 
   redirect(destination);
@@ -151,15 +169,23 @@ export async function signup(
       },
     });
 
-    if (error) {
-      return {
-        status: "error",
-        message:
-          "Unable to create that account. The email or username may already be in use.",
-      };
+    const outcome = resolveSignupProviderResult(data, error);
+
+    if (outcome.kind === "error") {
+      if (outcome.issue === "email_rate_limited") {
+        return {
+          status: "success",
+          code: outcome.issue,
+          email,
+          message:
+            "Confirmation email delivery is temporarily limited. Your account may already be waiting for confirmation; wait, then resend the email below.",
+        };
+      }
+
+      return authErrorState(outcome.issue, "signup", email);
     }
 
-    if (!data.session) {
+    if (outcome.kind === "confirmation_required") {
       confirmationRequired = true;
     } else {
       const result = await readAuthContext(supabase);
@@ -171,22 +197,70 @@ export async function signup(
         destination = pathForUserRole(result.context.profile);
       }
     }
-  } catch {
-    return {
-      status: "error",
-      message: "Unable to create your account right now. Please try again.",
-    };
+  } catch (error) {
+    return authErrorState(classifyAuthError(error), "signup", email);
   }
 
   if (confirmationRequired) {
     return {
       status: "success",
+      code: "confirmation_required",
+      email,
       message:
-        "Check your email and use the confirmation link to finish creating your account.",
+        "Account created. Check your email and use the confirmation link to finish setting up your account.",
     };
   }
 
   redirect(destination ?? "/auth/error?code=profile");
+}
+
+export async function resendConfirmation(
+  _previousState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = ConfirmationEmailSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return authErrorState("invalid_email", "resend");
+  }
+
+  if (!getOptionalSupabasePublicEnv()) {
+    return { status: "error", message: CONFIGURATION_MESSAGE };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: parsed.data.email,
+      options: {
+        emailRedirectTo: `${getApplicationOrigin()}/auth/confirm`,
+      },
+    });
+
+    if (error) {
+      return authErrorState(
+        classifyAuthError(error),
+        "resend",
+        parsed.data.email,
+      );
+    }
+
+    return {
+      status: "success",
+      code: "confirmation_required",
+      email: parsed.data.email,
+      message: "Confirmation email sent. Check your inbox and spam folder.",
+    };
+  } catch (error) {
+    return authErrorState(
+      classifyAuthError(error),
+      "resend",
+      parsed.data.email,
+    );
+  }
 }
 
 export async function logout(): Promise<never> {

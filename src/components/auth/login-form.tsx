@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { FieldError } from "@/components/auth/field-error";
 import { PasswordInput } from "@/components/auth/password-input";
+import { ResendConfirmation } from "@/components/auth/resend-confirmation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +71,10 @@ export function LoginForm() {
         >
           {state.message}
         </p>
+      ) : null}
+
+      {state.code === "confirmation_required" && state.email ? (
+        <ResendConfirmation email={state.email} />
       ) : null}
 
       <Button className="h-10 w-full" disabled={pending} type="submit">

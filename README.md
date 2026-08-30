@@ -142,6 +142,12 @@ then returns a PKCE `code`, which the Route Handler exchanges for the session.
 No custom SMTP provider or email-template modification is required for local
 confirmation testing.
 
+The built-in Free-plan email provider has a low project-wide delivery limit,
+so the application treats confirmation-required signup as success, classifies
+HTTP 429 separately, and offers a client-cooled-down resend action. A custom
+SMTP provider is optional for production delivery volume and must be configured
+in the Supabase Dashboard; no SMTP credentials belong in this repository.
+
 The Route Handler also retains `token_hash` verification for existing projects
 that already use a compatible custom confirmation template.
 

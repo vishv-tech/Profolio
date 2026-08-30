@@ -6,6 +6,7 @@ import { useActionState } from "react";
 
 import { FieldError } from "@/components/auth/field-error";
 import { PasswordInput } from "@/components/auth/password-input";
+import { ResendConfirmation } from "@/components/auth/resend-confirmation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,17 +22,22 @@ export function SignupForm() {
   const [state, formAction, pending] = useActionState(signup, initialState);
 
   if (state.status === "success") {
+    const deliveryLimited = state.code === "email_rate_limited";
+
     return (
       <div className="space-y-5 text-center" role="status">
         <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <MailCheck aria-hidden="true" className="size-5" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold">Check your email</h2>
+          <h2 className="text-lg font-semibold">
+            {deliveryLimited ? "Confirmation email delayed" : "Check your email"}
+          </h2>
           <p className="text-sm leading-6 text-muted-foreground">
             {state.message}
           </p>
         </div>
+        {state.email ? <ResendConfirmation email={state.email} /> : null}
         <Link
           className={buttonVariants({ variant: "outline", size: "lg" })}
           href="/login"
@@ -173,6 +179,12 @@ export function SignupForm() {
         >
           {state.message}
         </p>
+      ) : null}
+
+      {state.email &&
+      (state.code === "already_registered" ||
+        state.code === "confirmation_required") ? (
+        <ResendConfirmation email={state.email} />
       ) : null}
 
       <Button className="h-10 w-full" disabled={pending} type="submit">
