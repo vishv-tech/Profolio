@@ -121,3 +121,30 @@ test("photo actions enforce active auth, ownership, and published-image safety",
   assert.match(editor, /onChange\(""\)/u);
   assert.doesNotMatch(editor, /capture=/u);
 });
+
+test("the shared editor supports resume candidates and both saved/manual photo scopes", () => {
+  const editor = readFileSync(
+    "src/components/portfolio/profile-photo-editor.tsx",
+    "utf8",
+  );
+  const review = readFileSync(
+    "src/components/resume/resume-review-editor.tsx",
+    "utf8",
+  );
+  const workflow = readFileSync(
+    "src/components/upload/resume-workflow.tsx",
+    "utf8",
+  );
+  const draft = readFileSync(
+    "src/components/portfolio/portfolio-draft-editor.tsx",
+    "utf8",
+  );
+
+  assert.match(editor, /Images found in this resume/u);
+  assert.match(editor, /Use as profile photo/u);
+  assert.match(editor, /selectExtractedProfilePhoto/u);
+  assert.match(review, /profilePhotoCandidates/u);
+  assert.match(workflow, /kind: "resume"/u);
+  assert.match(draft, /kind: "portfolio"/u);
+  assert.doesNotMatch(review, /Profile image URL/u);
+});
