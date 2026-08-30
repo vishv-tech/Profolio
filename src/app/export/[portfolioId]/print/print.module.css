@@ -1,0 +1,65 @@
+.page {
+  min-height: 100svh;
+  background: #e5e7eb;
+}
+
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #d1d5db;
+  background: rgb(255 255 255 / 95%);
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(8px);
+}
+
+.canvas {
+  margin: 1.5rem auto;
+  max-width: 90rem;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 20px 45px rgb(0 0 0 / 15%);
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  .page,
+  .canvas {
+    margin: 0;
+    max-width: none;
+    min-height: auto;
+    overflow: visible;
+    background: white;
+    box-shadow: none;
+  }
+
+  .controls,
+  .canvas nav,
+  .canvas [role="navigation"] {
+    display: none !important;
+  }
+
+  .canvas *,
+  .canvas *::before,
+  .canvas *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .canvas section,
+  .canvas article,
+  .canvas li,
+  .canvas h1,
+  .canvas h2,
+  .canvas h3 {
+    break-inside: avoid-page;
+  }
+}
