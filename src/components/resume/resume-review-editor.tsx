@@ -12,6 +12,7 @@ import {
   ReviewTextarea,
   StringListEditor,
 } from "@/components/resume/review-primitives";
+import { ProfilePhotoEditor } from "@/components/portfolio/profile-photo-editor";
 import {
   createEmptyAchievement,
   createEmptyCertification,
@@ -38,6 +39,10 @@ import type {
   ProjectItem,
   SkillGroup,
 } from "@/types/portfolio";
+import type {
+  ProfilePhotoCandidate,
+  ProfilePhotoScope,
+} from "@/lib/profile-media/types";
 
 const LINK_TYPES = [
   "linkedin",
@@ -64,10 +69,14 @@ function itemActions<T>(
 
 export function ResumeReviewEditor({
   improveWithAi,
+  photoScope,
+  profilePhotoCandidates = [],
   value,
   onChange,
 }: {
   improveWithAi: boolean;
+  photoScope: ProfilePhotoScope;
+  profilePhotoCandidates?: ProfilePhotoCandidate[];
   value: PortfolioData;
   onChange: (value: PortfolioData) => void;
 }) {
@@ -124,15 +133,16 @@ export function ResumeReviewEditor({
             }
             value={value.personal.location}
           />
-          <ReviewField
-            label="Profile image URL"
+          <ProfilePhotoEditor
+            candidates={profilePhotoCandidates}
+            fullName={value.personal.fullName}
             onChange={(profileImageUrl) =>
               onChange({
                 ...value,
                 personal: { ...value.personal, profileImageUrl },
               })
             }
-            type="url"
+            scope={photoScope}
             value={value.personal.profileImageUrl}
           />
         </div>

@@ -109,6 +109,7 @@ export function ResumeWorkflow({
                 ? {
                     ...current,
                     portfolio: result.portfolio,
+                    profilePhotoCandidates: result.profilePhotoCandidates,
                     status: "completed",
                   }
                 : current,
@@ -220,7 +221,11 @@ export function ResumeWorkflow({
           return;
         }
 
-        setResume({ ...result.resume, portfolio: null });
+        setResume({
+          ...result.resume,
+          portfolio: null,
+          profilePhotoCandidates: [],
+        });
         setPortfolio(null);
         window.history.replaceState(
           null,
@@ -466,6 +471,8 @@ export function ResumeWorkflow({
           <ResumeReviewEditor
             improveWithAi={resume.improveWithAi}
             onChange={setPortfolio}
+            photoScope={{ id: resume.id, kind: "resume" }}
+            profilePhotoCandidates={resume.profilePhotoCandidates}
             value={portfolio}
           />
 

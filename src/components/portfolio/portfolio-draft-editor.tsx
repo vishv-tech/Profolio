@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, Save } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { ContentImprovementPanel } from "@/components/portfolio-intelligence/content-improvement-panel";
 import { ResumeReviewEditor } from "@/components/resume/resume-review-editor";
@@ -23,6 +23,16 @@ export function PortfolioDraftEditor({
   const [dirty, setDirty] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, startSaving] = useTransition();
+
+  useEffect(() => {
+    if (!dirty) return;
+
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [dirty]);
 
   function save() {
     setMessage(null);
@@ -83,6 +93,7 @@ export function PortfolioDraftEditor({
           setDirty(true);
           setMessage(null);
         }}
+        photoScope={{ id: portfolioId, kind: "portfolio" }}
         value={content}
       />
     </div>

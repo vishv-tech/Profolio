@@ -1,3 +1,4 @@
+import type { ProfilePhotoCandidate } from "@/lib/profile-media/types";
 import type { PortfolioData } from "@/types/portfolio";
 
 export const RESUME_STATUSES = [
@@ -14,6 +15,7 @@ export type ResumeWorkflowState = {
   fileName: string;
   status: ResumeStatus;
   improveWithAi: boolean;
+  profilePhotoCandidates: ProfilePhotoCandidate[];
   portfolio: PortfolioData | null;
 };
 
@@ -28,7 +30,11 @@ export type UploadResumeResult =
   | { success: false; message: string };
 
 export type ProcessResumeResult =
-  | { success: true; portfolio: PortfolioData }
+  | {
+      success: true;
+      portfolio: PortfolioData;
+      profilePhotoCandidates: ProfilePhotoCandidate[];
+    }
   | {
       success: false;
       message: string;

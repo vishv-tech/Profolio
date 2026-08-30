@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { requireActiveUser } from "@/lib/auth/guards";
+import { listResumeProfileCandidates } from "@/lib/profile-media/resume-storage";
 import { parseStoredPortfolio } from "@/lib/resumes/json";
 import {
   RESUME_STATUSES,
@@ -46,6 +47,10 @@ export async function getResumeWorkflowState(
     fileName: data.file_name,
     status: status.data,
     improveWithAi: data.improve_with_ai,
+    profilePhotoCandidates:
+      status.data === "completed"
+        ? await listResumeProfileCandidates(user.userId, data.id, supabase)
+        : [],
     portfolio: parseStoredPortfolio(data.extracted_data),
   };
 }

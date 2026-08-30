@@ -11,7 +11,13 @@ import {
 import { requireActiveUser } from "@/lib/auth/guards";
 import { createPortfolioDraft } from "@/lib/portfolios/mutations";
 import { createPortfolioSlugBase } from "@/lib/portfolios/slug";
+import {
+  listResumeProfileCandidates,
+  storeResumeProfileCandidates,
+} from "@/lib/profile-media/resume-storage";
+import type { ProfilePhotoCandidate } from "@/lib/profile-media/types";
 import { parseStoredPortfolio, toDatabaseJson } from "@/lib/resumes/json";
+import { extractResumeProfileMedia } from "@/lib/resumes/media";
 import { ResumeProcessingTiming } from "@/lib/resumes/timing";
 import {
   RESUME_STATUSES,
@@ -38,6 +44,72 @@ const PROCESSING_MESSAGE =
   "This resume is already being processed. Refresh shortly to see the result.";
 const PROCESSING_ERROR_MESSAGE =
   "We could not process this resume. Please try again.";
+
+type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+function logProfileMediaEvent(
+  stage: "complete" | "failed",
+  details: Record<string, boolean | number> = {},
+) {
+  if (process.env.NODE_ENV === "development") {
+    const method = stage === "failed" ? console.warn : console.info;
+    method("[resume-profile-media]", { stage, ...details });
+  }
+}
+
+async function listProfileCandidatesBestEffort(
+  userId: string,
+  resumeId: string,
+  supabase: ServerSupabaseClient,
+) {
+  try {
+    return await listResumeProfileCandidates(userId, resumeId, supabase);
+  } catch {
+    logProfileMediaEvent("failed");
+    return [];
+  }
+}
+
+async function addBestEffortProfileMedia({
+  pdfBytes,
+  resumeId,
+  supabase,
+  timing,
+  userId,
+}: {
+  pdfBytes: Uint8Array;
+  resumeId: string;
+  supabase: ServerSupabaseClient;
+  timing: ResumeProcessingTiming;
+  userId: string;
+}): Promise<{
+  automaticProfileImageUrl: string;
+  candidates: ProfilePhotoCandidate[];
+}> {
+  try {
+    const media = await timing.measure("profile-media-extraction", () =>
+      extractResumeProfileMedia(pdfBytes),
+    );
+    const stored = await timing.measure("profile-media-storage", () =>
+      storeResumeProfileCandidates(userId, resumeId, media, supabase),
+    );
+
+    logProfileMediaEvent("complete", {
+      automaticSelection: Boolean(stored.automaticProfileImageUrl),
+      discoveredImages: media.diagnostics.discoveredImages,
+      duplicateImages: media.diagnostics.duplicateImages,
+      pageFailures: media.diagnostics.pageFailures,
+      rejectedImages: media.diagnostics.rejectedImages,
+      storedCandidates: stored.candidates.length,
+    });
+    return stored;
+  } catch {
+    // Profile media is optional. A worker/decoder/storage failure must never
+    // turn otherwise valid resume text extraction into a failed resume.
+    logProfileMediaEvent("failed");
+    return { automaticProfileImageUrl: "", candidates: [] };
+  }
+}
 
 function invalidResumeResult(): ProcessResumeResult {
   return {
@@ -181,8 +253,16 @@ export async function processResume(
       );
       outcome = portfolio ? "success" : "failed";
 
+      const profilePhotoCandidates = portfolio
+        ? await listProfileCandidatesBestEffort(
+            user.userId,
+            existing.id,
+            supabase,
+          )
+        : [];
+
       return portfolio
-        ? { success: true, portfolio }
+        ? { success: true, portfolio, profilePhotoCandidates }
         : {
             success: false,
             message: PROCESSING_ERROR_MESSAGE,
@@ -265,11 +345,29 @@ export async function processResume(
         );
       }
 
-      const portfolio = await extractPortfolioFromPdf(
+      let portfolio = await extractPortfolioFromPdf(
         pdfBytes,
         claim.improve_with_ai,
         { timing },
       );
+      const profileMedia = await addBestEffortProfileMedia({
+        pdfBytes,
+        resumeId: claim.id,
+        supabase,
+        timing,
+        userId: user.userId,
+      });
+
+      if (profileMedia.automaticProfileImageUrl) {
+        portfolio = {
+          ...portfolio,
+          personal: {
+            ...portfolio.personal,
+            profileImageUrl: profileMedia.automaticProfileImageUrl,
+          },
+        };
+      }
+
       const { data: completed, error: completeError } = await timing.measure(
         "database-write",
         () =>
@@ -309,7 +407,11 @@ export async function processResume(
         revalidatePath("/upload"),
       );
       outcome = "success";
-      return { success: true, portfolio };
+      return {
+        success: true,
+        portfolio,
+        profilePhotoCandidates: profileMedia.candidates,
+      };
     } catch (error) {
       logResumeExtractionError("process-resume", error);
 
