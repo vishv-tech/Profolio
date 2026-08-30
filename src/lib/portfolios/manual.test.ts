@@ -15,6 +15,7 @@ import {
   createEmptyProject,
   createEmptySkillGroup,
 } from "@/lib/portfolios/defaults";
+import { createManualPortfolioDraftInsert } from "@/lib/portfolios/draft-insert";
 import { scorePortfolio } from "@/lib/portfolio-score/score";
 import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 
@@ -86,6 +87,10 @@ test("manual creation authenticates, stays owner-scoped, and skips resume AI", (
     "src/lib/portfolios/mutations.ts",
     "utf8",
   );
+  const insertSource = readFileSync(
+    "src/lib/portfolios/draft-insert.ts",
+    "utf8",
+  );
   const buttonSource = readFileSync(
     "src/components/portfolio/manual-portfolio-button.tsx",
     "utf8",
@@ -97,12 +102,64 @@ test("manual creation authenticates, stays owner-scoped, and skips resume AI", (
     actionSource,
     /Gemini|extractPortfolioFromPdf|processResume|uploadResume|from\("resumes"\)/u,
   );
-  assert.match(mutationSource, /user_id: userId/u);
+  assert.match(actionSource, /userId: user\.userId/u);
+  assert.match(mutationSource, /createManualPortfolioDraftInsert/u);
+  assert.match(insertSource, /user_id: userId/u);
   assert.match(mutationSource, /findExistingPortfolio/u);
   assert.match(mutationSource, /createPortfolioSlugCandidate/u);
   assert.match(mutationSource, /result\.error\?\.code !== "23505"/u);
   assert.match(buttonSource, /disabled=\{pending\}/u);
   assert.match(buttonSource, /\/dashboard\/editor\?portfolio=/u);
+});
+
+test("manual creation uses the authenticated insert grant and database draft default", () => {
+  const content = createEmptyPortfolioData();
+  const insert = createManualPortfolioDraftInsert({
+    content,
+    slug: "account-name",
+    title: " Account Name ",
+    userId: "5d938333-4b99-4a9d-b718-7b381c26f4c8",
+  });
+
+  assert.equal(insert.user_id, "5d938333-4b99-4a9d-b718-7b381c26f4c8");
+  assert.equal(insert.slug, "account-name");
+  assert.equal(insert.title, "Account Name");
+  assert.equal("status" in insert, false);
+  assert.equal("published_content" in insert, false);
+  assert.equal("published_at" in insert, false);
+  assert.equal(PortfolioDataSchema.safeParse(insert.draft_content).success, true);
+});
+
+test("manual draft creation matches the hardened resume insert contract", () => {
+  const mutationSource = readFileSync(
+    "src/lib/portfolios/mutations.ts",
+    "utf8",
+  );
+  const initialSchema = readFileSync(
+    "supabase/migrations/20260827000000_initial_profolio_schema.sql",
+    "utf8",
+  );
+  const publicationMigration = readFileSync(
+    "supabase/migrations/20260828153345_portfolio_publication_infrastructure.sql",
+    "utf8",
+  );
+  const hardenedResumeRpc = readFileSync(
+    "supabase/migrations/20260828154510_harden_draft_rpc_invoker.sql",
+    "utf8",
+  );
+
+  assert.match(mutationSource, /createManualPortfolioDraftInsert\(\{/u);
+  assert.match(mutationSource, /\.eq\("status", "draft"\)/u);
+  assert.match(mutationSource, /\.filter\("draft_content", "eq"/u);
+  assert.match(initialSchema, /status text not null default 'draft'/u);
+  assert.match(
+    publicationMigration,
+    /revoke insert \(published_content, status, published_at\)[\s\S]*from authenticated/u,
+  );
+  assert.match(
+    hardenedResumeRpc,
+    /insert into public\.portfolios \(\s*user_id,\s*slug,\s*title,\s*draft_content\s*\)/u,
+  );
 });
 
 test("manual draft creation and editing preserve publication snapshots", () => {

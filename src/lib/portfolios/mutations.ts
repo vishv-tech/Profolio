@@ -1,6 +1,7 @@
 import "server-only";
 
 import { logPortfolioDatabaseError } from "@/lib/portfolios/database-errors";
+import { createManualPortfolioDraftInsert } from "@/lib/portfolios/draft-insert";
 import { createPortfolioSlugCandidate } from "@/lib/portfolios/slug";
 import { toDatabaseJson } from "@/lib/resumes/json";
 import { createClient } from "@/lib/supabase/server";
@@ -29,11 +30,15 @@ type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 async function findExistingPortfolio(
   supabase: ServerSupabaseClient,
   userId: string,
+  content: PortfolioData,
 ) {
+  const serializedContent = JSON.stringify(toDatabaseJson(content));
   const result = await supabase
     .from("portfolios")
     .select("id, slug, status")
     .eq("user_id", userId)
+    .eq("status", "draft")
+    .filter("draft_content", "eq", serializedContent)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -81,7 +86,11 @@ export async function createPortfolioDraft(
     };
   }
 
-  const existing = await findExistingPortfolio(supabase, userId);
+  const existing = await findExistingPortfolio(
+    supabase,
+    userId,
+    parsedContent.data,
+  );
 
   if (!existing.ok) {
     return null;
@@ -100,13 +109,14 @@ export async function createPortfolioDraft(
     const slug = createPortfolioSlugCandidate(slugBase, collisionNumber);
     const result = await supabase
       .from("portfolios")
-      .insert({
-        draft_content: toDatabaseJson(parsedContent.data),
-        slug,
-        status: "draft",
-        title: title.trim() || "Portfolio",
-        user_id: userId,
-      })
+      .insert(
+        createManualPortfolioDraftInsert({
+          content: parsedContent.data,
+          slug,
+          title,
+          userId,
+        }),
+      )
       .select("id, slug, status")
       .single();
 
@@ -127,7 +137,11 @@ export async function createPortfolioDraft(
     // A concurrent double-submit can race the first ownership lookup. If the
     // other request created this user's draft, converge on it instead of
     // creating a second portfolio with a suffixed slug.
-    const concurrentExisting = await findExistingPortfolio(supabase, userId);
+    const concurrentExisting = await findExistingPortfolio(
+      supabase,
+      userId,
+      parsedContent.data,
+    );
     if (!concurrentExisting.ok) {
       return null;
     }
