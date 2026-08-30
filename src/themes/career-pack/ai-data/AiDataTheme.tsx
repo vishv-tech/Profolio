@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Binary, Network } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
@@ -30,12 +31,43 @@ export default function AiDataTheme({ data, config }: ThemeComponentProps) {
             <span>verified source data</span>
           </div>
 
-          <PortfolioHeader
-            className={styles.aiHero}
-            config={config}
-            data={data}
-            imageClassName="rounded-[var(--career-radius)]"
-          />
+          <div className={styles.aiHeroStage} data-reveal style={revealStyle(0)}>
+            <PortfolioHeader
+              className={styles.aiHero}
+              config={config}
+              data={data}
+              imageClassName="rounded-[var(--career-radius)]"
+            />
+            <div className={styles.aiNetwork} aria-hidden="true">
+              <Network />
+              <svg viewBox="0 0 320 190">
+                <g className={styles.aiConnections}>
+                  <path d="M30 95 98 36l74 38 58-48 58 70-66 64-92-20-66 28Z" />
+                  <path d="m98 36 32 104 42-66 50 86 8-134M30 95l142-21 116 22" />
+                </g>
+                <g className={styles.aiNodes}>
+                  <circle cx="30" cy="95" r="6" />
+                  <circle cx="98" cy="36" r="6" />
+                  <circle cx="172" cy="74" r="7" />
+                  <circle cx="230" cy="26" r="5" />
+                  <circle cx="288" cy="96" r="7" />
+                  <circle cx="222" cy="160" r="6" />
+                  <circle cx="130" cy="140" r="5" />
+                  <circle cx="64" cy="168" r="6" />
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <div className={styles.aiDataStream} aria-hidden="true">
+            <Binary />
+            <div className={styles.aiDataTrack}>
+              <span>01001 / VECTOR</span>
+              <span>10110 / MODEL</span>
+              <span>00101 / SIGNAL</span>
+              <span>11010 / INSIGHT</span>
+            </div>
+          </div>
 
           <div className={styles.aiWorkspace}>
             <aside className={styles.aiRail} aria-label="Portfolio data index">

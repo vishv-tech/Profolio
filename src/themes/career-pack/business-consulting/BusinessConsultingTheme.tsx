@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Presentation, TrendingUp } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
@@ -35,7 +36,18 @@ export default function BusinessConsultingTheme({
             imageClassName="rounded-[var(--career-radius)]"
           />
           <div className={styles.consultingCoverMark} aria-hidden="true">
-            /01
+            <div className={styles.consultingMarkTopline}>
+              <Presentation />
+              <span>{String(sections.length + 1).padStart(2, "0")} slides</span>
+            </div>
+            <div className={styles.consultingGrowth}>
+              <TrendingUp />
+              <svg viewBox="0 0 220 90">
+                <path className={styles.consultingGrowthLine} d="m4 80 46-34 38 18 48-46 32 18 48-32" />
+                <path className={styles.consultingGrowthFill} d="m4 80 46-34 38 18 48-46 32 18 48-32v86H4Z" />
+              </svg>
+            </div>
+            <strong>/01</strong>
           </div>
         </section>
 

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Cog, Nut, Wrench } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
@@ -31,12 +32,32 @@ export default function MechanicalEngineerTheme({
           <span className={styles.microLabel}>Engineering portfolio / specification</span>
           <span className={styles.microLabel}>Sheet 01</span>
         </div>
-        <PortfolioHeader
-          className={styles.mechanicalHero}
-          config={config}
-          data={data}
-          imageClassName="rounded-none"
-        />
+        <div
+          className={styles.mechanicalHeroStage}
+          data-reveal
+          style={revealStyle(1)}
+        >
+          <PortfolioHeader
+            className={styles.mechanicalHero}
+            config={config}
+            data={data}
+            imageClassName="rounded-none"
+          />
+          <div className={styles.mechanicalAssembly} aria-hidden="true">
+            <span className={`${styles.mechanicalGear} ${styles.mechanicalGearLarge}`}>
+              <Cog />
+            </span>
+            <span className={`${styles.mechanicalGear} ${styles.mechanicalGearSmall}`}>
+              <Cog />
+            </span>
+            <span className={styles.mechanicalNut}>
+              <Nut />
+            </span>
+            <span className={styles.mechanicalTool}>
+              <Wrench />
+            </span>
+          </div>
+        </div>
 
         <div className={styles.mechanicalBody}>
           <aside className={styles.mechanicalIndex} aria-label="Portfolio drawing index">
@@ -53,7 +74,7 @@ export default function MechanicalEngineerTheme({
 
           <main className={styles.mechanicalSections}>
             {sections.map((sectionKey, index) => (
-              <div data-reveal key={sectionKey} style={revealStyle(index + 1)}>
+              <div data-reveal key={sectionKey} style={revealStyle(index + 2)}>
                 <SectionRenderer
                   className={`${styles.sectionCard} ${styles.mechanicalSection}`}
                   data={data}

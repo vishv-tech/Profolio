@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Calculator, Sigma, TrendingUp } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
@@ -35,9 +36,38 @@ export default function FinanceCaTheme({ data, config }: ThemeComponentProps) {
           imageClassName="rounded-[var(--career-radius)]"
         />
 
+        <section
+          aria-label="Portfolio statement overview"
+          className={styles.financeDashboard}
+          data-reveal
+          style={revealStyle(1)}
+        >
+          <div className={styles.financeMetric}>
+            <Calculator aria-hidden="true" />
+            <span>Visible chapters</span>
+            <strong>{String(sections.length).padStart(2, "0")}</strong>
+          </div>
+          <div className={styles.financeChart} aria-hidden="true">
+            <span style={{ "--bar-size": "42%" } as CSSProperties} />
+            <span style={{ "--bar-size": "66%" } as CSSProperties} />
+            <span style={{ "--bar-size": "54%" } as CSSProperties} />
+            <span style={{ "--bar-size": "88%" } as CSSProperties} />
+            <TrendingUp />
+          </div>
+          <div className={styles.financeFormula} aria-hidden="true">
+            <Sigma />
+            <div className={styles.financeFormulaTrack}>
+              <span>01 / ANALYZE</span>
+              <span>02 / RECONCILE</span>
+              <span>03 / REPORT</span>
+              <span>04 / ADVISE</span>
+            </div>
+          </div>
+        </section>
+
         <main className={styles.financeLedger}>
           {sections.map((sectionKey, index) => (
-            <div data-reveal key={sectionKey} style={revealStyle(index + 1)}>
+            <div data-reveal key={sectionKey} style={revealStyle(index + 2)}>
               <SectionRenderer
                 className={styles.financeRow}
                 data={data}

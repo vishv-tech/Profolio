@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -37,6 +38,18 @@ const POLISHED_LAYOUT_KEYS = EXPECTED_LAYOUT_KEYS.filter(
   (layoutKey) => layoutKey !== "career-content-creator",
 );
 
+const SIGNATURE_MARKERS: Readonly<Record<(typeof POLISHED_LAYOUT_KEYS)[number], RegExp>> = {
+  "career-mechanical-engineer": /mechanicalAssembly/,
+  "career-electrical-engineer": /electricalSchematic/,
+  "career-finance-ca": /financeDashboard/,
+  "career-legal-professional": /legalFolioMark/,
+  "career-architect-designer": /architectDraft/,
+  "career-healthcare-professional": /clinicalEcg/,
+  "career-ai-data": /aiNetwork/,
+  "career-product-designer": /productPrototype/,
+  "career-business-consulting": /consultingGrowth/,
+};
+
 test("registers ten unique career theme layout keys", () => {
   const registeredKeys = careerThemePack.map((theme) => theme.layoutKey);
 
@@ -70,6 +83,7 @@ test("renders every career theme with the full PortfolioData fixture", async () 
 
     assert.match(html, new RegExp(`data-theme-layout="${manifest.layoutKey}"`));
     assert.match(html, /Avery Morgan/);
+    assert.doesNotMatch(html, /\b(?:undefined|null)\b/);
   }
 });
 
@@ -87,6 +101,7 @@ test("renders every career theme with sparse PortfolioData", async () => {
 
     assert.match(html, /Jordan Lee/);
     assert.doesNotMatch(html, />Experience</);
+    assert.doesNotMatch(html, /\b(?:undefined|null)\b/);
   }
 });
 
@@ -166,13 +181,70 @@ test("career themes expose bounded motion through ThemeConfig", async () => {
     },
   };
 
-  for (const layoutKey of POLISHED_LAYOUT_KEYS.slice(0, 3)) {
+  for (const layoutKey of POLISHED_LAYOUT_KEYS) {
     const Theme = await loadCareerThemeComponent(layoutKey);
     assert.ok(Theme);
     const html = renderToStaticMarkup(
       createElement(Theme, { config: dynamicConfig, data: fullPortfolioFixture }),
     );
     assert.match(html, /data-animation="dynamic"/);
+    assert.match(html, SIGNATURE_MARKERS[layoutKey]);
+  }
+});
+
+test("remaining career themes keep safe links and reject unsafe protocols", async () => {
+  const unsafeFixture = {
+    ...fullPortfolioFixture,
+    links: [
+      ...fullPortfolioFixture.links,
+      {
+        id: "unsafe-link",
+        type: "other" as const,
+        label: "Unsafe",
+        url: "javascript:alert(1)",
+      },
+    ],
+  };
+
+  for (const layoutKey of POLISHED_LAYOUT_KEYS) {
+    const Theme = await loadCareerThemeComponent(layoutKey);
+    assert.ok(Theme);
+    const html = renderToStaticMarkup(
+      createElement(Theme, {
+        config: careerThemeFixtureConfig,
+        data: unsafeFixture,
+      }),
+    );
+
+    assert.match(html, /href="https:\/\/www\.linkedin\.com\/in\/example"/);
+    assert.match(html, /rel="noreferrer noopener"/);
+    assert.doesNotMatch(html, /javascript:/);
+  }
+});
+
+test("career studio motion is configurable and respects reduced motion", () => {
+  const css = readFileSync(
+    new URL("./shared/career-studio.module.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(css, /\.root\[data-animation="none"\]/);
+  assert.match(css, /\.root\[data-animation="subtle"\]/);
+  assert.match(css, /\.root\[data-animation="dynamic"\]/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+
+  for (const keyframe of [
+    "mechanical-spin",
+    "electrical-flow",
+    "finance-bar-rise",
+    "legal-mark",
+    "architect-draw",
+    "clinical-trace",
+    "ai-data-flow",
+    "product-panel-a",
+    "consulting-draw",
+  ]) {
+    assert.match(css, new RegExp(`@keyframes ${keyframe}`));
   }
 });
 

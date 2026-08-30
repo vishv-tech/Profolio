@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { MousePointer2, PanelsTopLeft } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
@@ -36,6 +37,13 @@ export default function ProductDesignerTheme({
           <div className={styles.productStatement} aria-hidden="true">
             <span className={styles.microLabel}>Product casebook</span>
             <strong>Work / process</strong>
+            <div className={styles.productPrototype}>
+              <PanelsTopLeft />
+              <span className={styles.productPrototypePanel} />
+              <span className={styles.productPrototypePanel} />
+              <span className={styles.productPrototypeChip} />
+              <MousePointer2 className={styles.productCursor} />
+            </div>
           </div>
         </section>
 

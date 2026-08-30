@@ -13,6 +13,12 @@
   content: "";
 }
 
+.root a:focus-visible {
+  border-radius: calc(var(--career-radius) * .35);
+  outline: 3px solid color-mix(in srgb, var(--career-accent) 45%, transparent);
+  outline-offset: 4px;
+}
+
 .root[data-animation="subtle"] [data-reveal] {
   animation: studio-reveal 520ms ease-out both;
   animation-delay: calc(var(--item-index, 0) * 55ms);
@@ -45,6 +51,15 @@
 .root[data-animation="none"] .sectionCard:focus-within,
 .root[data-animation="none"] .sectionCard:hover {
   transform: none;
+}
+
+.root[data-animation="none"] .legalSection {
+  transition: none;
+}
+
+.root[data-animation="none"] .legalSection:focus-within,
+.root[data-animation="none"] .legalSection:hover {
+  padding-inline: 0;
 }
 
 .microLabel {
@@ -84,22 +99,105 @@
 
 .mechanicalHero {
   position: relative;
+  z-index: 1;
   padding: clamp(1.5rem, 5vw, 3.75rem);
+  padding-right: clamp(12rem, 28vw, 22rem);
   border: solid var(--career-border);
   border-width: 0 1px 1px;
   background: color-mix(in srgb, var(--career-surface) 94%, transparent);
 }
 
-.mechanicalHero::after {
+.mechanicalHeroStage {
+  position: relative;
+}
+
+.mechanicalAssembly {
   position: absolute;
-  right: clamp(1rem, 4vw, 3rem);
-  bottom: 1rem;
-  width: clamp(4rem, 12vw, 8rem);
-  aspect-ratio: 1;
-  border: 1px dashed var(--career-accent);
+  z-index: 2;
+  top: 50%;
+  right: clamp(1.5rem, 5vw, 4rem);
+  width: clamp(9rem, 22vw, 17rem);
+  aspect-ratio: 1.35;
+  border: 1px dashed color-mix(in srgb, var(--career-accent) 65%, var(--career-border));
+  background:
+    linear-gradient(90deg, transparent 49.5%, var(--career-border) 50%, transparent 50.5%),
+    linear-gradient(transparent 49.5%, var(--career-border) 50%, transparent 50.5%);
+  transform: translateY(-50%);
+}
+
+.mechanicalAssembly::before,
+.mechanicalAssembly::after {
+  position: absolute;
+  width: .55rem;
+  height: .55rem;
+  border: 2px solid var(--career-accent);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1rem color-mix(in srgb, var(--career-accent) 6%, transparent);
+  background: var(--career-surface);
   content: "";
+}
+
+.mechanicalAssembly::before {
+  top: -.35rem;
+  left: -.35rem;
+}
+
+.mechanicalAssembly::after {
+  right: -.35rem;
+  bottom: -.35rem;
+}
+
+.mechanicalGear,
+.mechanicalNut,
+.mechanicalTool {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: var(--career-accent);
+}
+
+.mechanicalGearLarge {
+  top: 10%;
+  left: 10%;
+}
+
+.mechanicalGearLarge svg {
+  width: clamp(4.5rem, 10vw, 7.5rem);
+  height: auto;
+  stroke-width: 1.15;
+}
+
+.mechanicalGearSmall {
+  right: 13%;
+  bottom: 8%;
+}
+
+.mechanicalGearSmall svg {
+  width: clamp(2.6rem, 6vw, 4.5rem);
+  height: auto;
+  stroke-width: 1.35;
+}
+
+.mechanicalNut {
+  top: 15%;
+  right: 10%;
+}
+
+.mechanicalNut svg {
+  width: clamp(1.5rem, 3vw, 2.2rem);
+  height: auto;
+}
+
+.mechanicalTool {
+  bottom: 8%;
+  left: 9%;
+  padding: .4rem;
+  border: 1px solid var(--career-border);
+  background: var(--career-surface);
+}
+
+.mechanicalTool svg {
+  width: clamp(1.3rem, 3vw, 2rem);
+  height: auto;
 }
 
 .mechanicalBody {
@@ -202,13 +300,84 @@
   background: color-mix(in srgb, var(--career-accent) 30%, transparent);
 }
 
-.electricalHero {
-  padding: clamp(1.5rem, 5vw, 4rem);
+.electricalHeroStage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, .75fr);
+  overflow: hidden;
   border: 1px solid var(--career-border);
   border-radius: var(--career-radius);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--career-accent) 12%, var(--career-surface)), var(--career-surface));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--career-accent) 10%, transparent);
+}
+
+.electricalHero {
+  position: relative;
+  z-index: 1;
+  padding: clamp(1.5rem, 5vw, 4rem);
+}
+
+.electricalSchematic {
+  position: relative;
+  min-height: 16rem;
+  overflow: hidden;
+  border-left: 1px solid var(--career-border);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--career-accent) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--career-accent) 7%, transparent) 1px, transparent 1px),
+    color-mix(in srgb, var(--career-background) 54%, var(--career-surface));
+  background-size: 1.5rem 1.5rem;
+}
+
+.electricalSchematic > svg:last-child {
+  position: absolute;
+  inset: auto -1.25rem 1.5rem 1.25rem;
+  width: calc(100% + 1.25rem);
+  height: auto;
+  overflow: visible;
+}
+
+.electricalBoardIcon,
+.electricalWaveIcon {
+  position: absolute;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--career-accent);
+  stroke-width: 1.4;
+}
+
+.electricalBoardIcon {
+  top: 1.5rem;
+  left: 1.5rem;
+}
+
+.electricalWaveIcon {
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.electricalTrace,
+.electricalTraceSecondary {
+  fill: none;
+  stroke: var(--career-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.electricalTrace {
+  stroke-dasharray: 16 13;
+}
+
+.electricalTraceSecondary {
+  opacity: .35;
+  stroke-dasharray: 4 10;
+}
+
+.electricalNodes circle {
+  fill: var(--career-surface);
+  stroke: var(--career-accent);
+  stroke-width: 3;
 }
 
 .electricalGrid {
@@ -284,9 +453,86 @@
 }
 
 .aiHero {
+  position: relative;
+  z-index: 1;
   padding: clamp(1.5rem, 5vw, 4rem);
+  padding-right: clamp(14rem, 34vw, 29rem);
   border-bottom: 1px solid var(--career-border);
   background: linear-gradient(120deg, color-mix(in srgb, var(--career-accent) 9%, transparent), transparent 60%);
+}
+
+.aiHeroStage {
+  position: relative;
+  overflow: hidden;
+}
+
+.aiNetwork {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: clamp(1rem, 4vw, 3rem);
+  width: min(30vw, 23rem);
+  aspect-ratio: 1.5;
+  transform: translateY(-50%);
+}
+
+.aiNetwork > svg:first-child {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--career-accent);
+}
+
+.aiNetwork > svg:last-child {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.aiConnections path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--career-accent) 52%, var(--career-border));
+  stroke-dasharray: 7 8;
+  stroke-width: 1.5;
+}
+
+.aiNodes circle {
+  fill: var(--career-surface);
+  stroke: var(--career-accent);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.aiDataStream {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  overflow: hidden;
+  padding: .7rem 1rem;
+  border-bottom: 1px solid var(--career-border);
+  background: color-mix(in srgb, var(--career-accent) 5%, var(--career-background));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.aiDataStream > svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: var(--career-accent);
+}
+
+.aiDataTrack {
+  display: flex;
+  width: max-content;
+  gap: 2rem;
+  color: var(--career-muted);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  white-space: nowrap;
 }
 
 .aiWorkspace {
@@ -361,6 +607,102 @@
   border-bottom: 3px double var(--career-text);
 }
 
+.financeDashboard {
+  display: grid;
+  grid-template-columns: minmax(9rem, .65fr) minmax(12rem, 1fr) minmax(0, 1.35fr);
+  min-height: 8.5rem;
+  border-bottom: 3px double var(--career-text);
+}
+
+.financeMetric,
+.financeChart,
+.financeFormula {
+  min-width: 0;
+  padding: 1.25rem;
+  border-right: 1px solid var(--career-border);
+}
+
+.financeMetric {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .65rem;
+  align-items: start;
+}
+
+.financeMetric svg {
+  width: 1.25rem;
+  color: var(--career-accent);
+}
+
+.financeMetric span {
+  color: var(--career-muted);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.financeMetric strong {
+  grid-column: 1 / -1;
+  font-family: var(--career-heading-font);
+  font-size: clamp(2.5rem, 6vw, 4.75rem);
+  font-weight: 550;
+  line-height: .9;
+}
+
+.financeChart {
+  position: relative;
+  display: flex;
+  align-items: end;
+  gap: .65rem;
+  overflow: hidden;
+  background: linear-gradient(transparent 49%, var(--career-border) 50%, transparent 51%);
+  background-size: 100% 2rem;
+}
+
+.financeChart > span {
+  width: clamp(.65rem, 2vw, 1.25rem);
+  height: var(--bar-size);
+  border-top: 2px solid var(--career-accent);
+  background: color-mix(in srgb, var(--career-accent) 18%, transparent);
+  transform-origin: bottom;
+}
+
+.financeChart svg {
+  position: absolute;
+  top: .9rem;
+  right: 1rem;
+  width: 1.4rem;
+  color: var(--career-accent);
+}
+
+.financeFormula {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  overflow: hidden;
+  border-right: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.financeFormula > svg {
+  width: clamp(2rem, 5vw, 3.5rem);
+  flex: 0 0 auto;
+  color: var(--career-accent);
+  stroke-width: 1.2;
+}
+
+.financeFormulaTrack {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+  color: var(--career-muted);
+  font-size: .67rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+
 .financeLedger {
   counter-reset: ledger;
 }
@@ -427,6 +769,23 @@
   border-bottom: 1px solid var(--career-text);
 }
 
+.legalFolioMark {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  color: var(--career-muted);
+  font-size: .67rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.legalFolioMark svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--career-text);
+}
+
 .legalHero {
   padding-block: clamp(2.5rem, 8vw, 6rem);
   border-bottom: 4px double var(--career-text);
@@ -440,21 +799,43 @@
 }
 
 .legalRail {
+  position: sticky;
+  top: 1rem;
   align-self: start;
+  padding-top: .25rem;
   color: var(--career-muted);
-  font-family: var(--career-heading-font);
-  font-size: clamp(2.5rem, 7vw, 5rem);
-  line-height: .9;
+  font-size: .72rem;
 }
 
-.legalRail small {
-  display: block;
-  margin-top: 1rem;
-  font-family: inherit;
-  font-size: .7rem;
-  letter-spacing: .14em;
-  line-height: 1.5;
-  text-transform: uppercase;
+.legalRail > svg {
+  width: clamp(3rem, 7vw, 5rem);
+  height: auto;
+  margin-bottom: 1.5rem;
+  color: var(--career-text);
+  stroke-width: .85;
+}
+
+.legalRail ol {
+  display: grid;
+  gap: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--career-border);
+  list-style: none;
+}
+
+.legalRail li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: .4rem;
+  padding-block: .7rem;
+  border-bottom: 1px solid var(--career-border);
+  line-height: 1.35;
+}
+
+.legalRail li span:first-child {
+  color: var(--career-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .legalSections {
@@ -466,6 +847,7 @@
   position: relative;
   padding-bottom: clamp(2rem, 5vw, 4rem);
   border-bottom: 1px solid var(--career-border);
+  transition: padding 220ms ease, background-color 220ms ease;
 }
 
 .legalSection::before {
@@ -477,6 +859,12 @@
   border-radius: 50%;
   background: var(--career-accent);
   content: "";
+}
+
+.legalSection:focus-within,
+.legalSection:hover {
+  padding-inline: 1rem;
+  background: color-mix(in srgb, var(--career-accent) 3%, transparent);
 }
 
 .consulting::before {
@@ -506,15 +894,71 @@
 
 .consultingCoverMark {
   display: grid;
-  place-items: end start;
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
   min-height: 15rem;
   padding: clamp(1.5rem, 4vw, 3rem);
   color: color-mix(in srgb, var(--career-surface) 92%, var(--career-text));
   background: var(--career-accent);
+}
+
+.consultingCoverMark > strong {
+  align-self: end;
   font-family: var(--career-heading-font);
   font-size: clamp(3.5rem, 10vw, 8rem);
   font-weight: 700;
   line-height: .75;
+}
+
+.consultingMarkTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.consultingMarkTopline svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.consultingGrowth {
+  position: relative;
+  align-self: center;
+  min-height: 6rem;
+}
+
+.consultingGrowth > svg:first-child {
+  position: absolute;
+  z-index: 2;
+  top: -.75rem;
+  right: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.consultingGrowth > svg:last-child {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.consultingGrowthLine {
+  fill: none;
+  stroke: currentColor;
+  stroke-dasharray: 320;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.consultingGrowthFill {
+  fill: color-mix(in srgb, currentColor 10%, transparent);
+  stroke: none;
 }
 
 .consultingDeck {
@@ -571,23 +1015,87 @@
   min-height: 26rem;
   justify-content: end;
   padding: clamp(1.5rem, 6vw, 5rem);
+  padding-right: clamp(17rem, 38vw, 34rem);
   border: 1px solid var(--career-border);
   background:
     linear-gradient(135deg, transparent 55%, color-mix(in srgb, var(--career-accent) 14%, transparent)),
     var(--career-surface);
 }
 
-.architectHero::before {
+.architectHeroStage {
+  position: relative;
+}
+
+.architectDraft {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: min(32vw, 18rem);
-  aspect-ratio: 1.45;
+  top: 50%;
+  right: clamp(1.5rem, 5vw, 4rem);
+  width: min(34vw, 25rem);
+  aspect-ratio: 1.45 / 1;
   border: 1px solid var(--career-accent);
+  background: color-mix(in srgb, var(--career-surface) 86%, transparent);
   box-shadow:
     -1.25rem 1.25rem 0 -1px var(--career-surface),
     -1.25rem 1.25rem 0 var(--career-border);
-  content: "";
+  transform: translateY(-50%);
+}
+
+.architectDraft > svg:not(.architectCompass, .architectRuler) {
+  position: absolute;
+  inset: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
+  overflow: visible;
+}
+
+.architectLine {
+  fill: none;
+  stroke: var(--career-accent);
+  stroke-dasharray: 530;
+  stroke-linecap: square;
+  stroke-width: 1.5;
+}
+
+.architectPoint {
+  fill: var(--career-surface);
+  stroke: var(--career-accent);
+  stroke-width: 2;
+}
+
+.architectCompass,
+.architectRuler {
+  position: absolute;
+  z-index: 2;
+  color: var(--career-accent);
+  background: var(--career-surface);
+}
+
+.architectCompass {
+  top: -1.25rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: .35rem;
+  border: 1px solid var(--career-border);
+}
+
+.architectRuler {
+  bottom: -1rem;
+  left: 1.5rem;
+  width: 4rem;
+  height: 2rem;
+  padding: .35rem;
+  border: 1px solid var(--career-border);
+}
+
+.architectCallout {
+  position: absolute;
+  right: .5rem;
+  bottom: .35rem;
+  color: var(--career-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .6rem;
+  letter-spacing: .12em;
 }
 
 .architectPlan {
@@ -645,8 +1153,50 @@
   border-radius: 50%;
   color: var(--career-accent);
   background: color-mix(in srgb, var(--career-accent) 7%, var(--career-surface));
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 300;
+}
+
+.clinicalPulse svg {
+  width: clamp(2.25rem, 5vw, 3.75rem);
+  height: auto;
+  stroke-width: 1.35;
+}
+
+.clinicalEcg {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  min-height: 4.5rem;
+  margin-top: 1rem;
+  overflow: hidden;
+  padding-inline: 1.25rem 0;
+  border: 1px solid var(--career-border);
+  border-radius: var(--career-radius);
+  background: color-mix(in srgb, var(--career-surface) 94%, transparent);
+}
+
+.clinicalEcg > span {
+  color: var(--career-muted);
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  white-space: nowrap;
+}
+
+.clinicalEcg svg {
+  width: 100%;
+  height: 4.5rem;
+  overflow: visible;
+}
+
+.clinicalEcgLine {
+  fill: none;
+  stroke: var(--career-accent);
+  stroke-dasharray: 110 22;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
 }
 
 .clinicalBody {
@@ -663,6 +1213,14 @@
   color: var(--career-muted);
   font-size: .8rem;
   line-height: 1.7;
+}
+
+.clinicalRail > svg {
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+  color: var(--career-accent);
+  stroke-width: 1.4;
 }
 
 .clinicalSections {
@@ -732,6 +1290,65 @@
   line-height: .9;
 }
 
+.productPrototype {
+  position: relative;
+  min-height: 10rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--career-surface) 55%, transparent);
+  border-radius: calc(var(--career-radius) * .8);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--career-surface) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--career-surface) 18%, transparent) 1px, transparent 1px);
+  background-size: 1rem 1rem;
+}
+
+.productPrototype > svg:first-child {
+  position: absolute;
+  top: .8rem;
+  left: .8rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.productPrototypePanel {
+  position: absolute;
+  width: 48%;
+  height: 42%;
+  border: 1px solid color-mix(in srgb, var(--career-surface) 72%, transparent);
+  border-radius: calc(var(--career-radius) * .6);
+  background: color-mix(in srgb, var(--career-surface) 12%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.productPrototypePanel:nth-of-type(1) {
+  top: 22%;
+  left: 13%;
+}
+
+.productPrototypePanel:nth-of-type(2) {
+  right: 10%;
+  bottom: 12%;
+}
+
+.productPrototypeChip {
+  position: absolute;
+  top: 18%;
+  right: 13%;
+  width: 2.6rem;
+  height: .85rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--career-surface) 76%, transparent);
+}
+
+.productCursor {
+  position: absolute;
+  right: 31%;
+  bottom: 25%;
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: drop-shadow(0 3px 5px color-mix(in srgb, var(--career-text) 20%, transparent));
+}
+
 .productGrid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -753,9 +1370,234 @@
   grid-column: 1 / -1;
 }
 
+.root[data-animation="subtle"] .mechanicalGearLarge {
+  animation: mechanical-spin 22s linear infinite;
+}
+
+.root[data-animation="subtle"] .mechanicalGearSmall {
+  animation: mechanical-spin-reverse 16s linear infinite;
+}
+
+.root[data-animation="dynamic"] .mechanicalGearLarge {
+  animation: mechanical-spin 11s linear infinite;
+}
+
+.root[data-animation="dynamic"] .mechanicalGearSmall {
+  animation: mechanical-spin-reverse 8s linear infinite;
+}
+
+.root[data-animation="subtle"] .electricalTrace,
+.root[data-animation="subtle"] .electricalTraceSecondary {
+  animation: electrical-flow 8s linear infinite;
+}
+
+.root[data-animation="dynamic"] .electricalTrace,
+.root[data-animation="dynamic"] .electricalTraceSecondary {
+  animation: electrical-flow 3.5s linear infinite;
+}
+
+.root[data-animation="subtle"] .signalDots i,
+.root[data-animation="subtle"] .electricalNodes circle {
+  animation: electrical-node 3s ease-in-out infinite;
+}
+
+.root[data-animation="dynamic"] .signalDots i,
+.root[data-animation="dynamic"] .electricalNodes circle {
+  animation: electrical-node 1.7s ease-in-out infinite;
+}
+
+.root[data-animation="subtle"] .signalDots i:nth-child(2),
+.root[data-animation="dynamic"] .signalDots i:nth-child(2),
+.root[data-animation="subtle"] .electricalNodes circle:nth-child(even),
+.root[data-animation="dynamic"] .electricalNodes circle:nth-child(even) {
+  animation-delay: .45s;
+}
+
+.root[data-animation="subtle"] .signalDots i:nth-child(3),
+.root[data-animation="dynamic"] .signalDots i:nth-child(3) {
+  animation-delay: .9s;
+}
+
+.root[data-animation="subtle"] .financeChart > span,
+.root[data-animation="dynamic"] .financeChart > span {
+  animation: finance-bar-rise 700ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.root[data-animation="subtle"] .financeFormulaTrack {
+  animation: finance-ticker 12s ease-in-out infinite alternate;
+}
+
+.root[data-animation="dynamic"] .financeFormulaTrack {
+  animation: finance-ticker 6s ease-in-out infinite alternate;
+}
+
+.root[data-animation="dynamic"] .legalFolioMark svg {
+  animation: legal-mark 3s ease-in-out infinite;
+  transform-origin: 70% 20%;
+}
+
+.root[data-animation="subtle"] .architectLine {
+  animation: architect-draw 3s ease-out both;
+}
+
+.root[data-animation="dynamic"] .architectLine {
+  animation: architect-draw 2s ease-out both, architect-dash 12s linear 2s infinite;
+}
+
+.root[data-animation="subtle"] .clinicalEcgLine {
+  animation: clinical-trace 7s linear infinite;
+}
+
+.root[data-animation="dynamic"] .clinicalEcgLine {
+  animation: clinical-trace 3.2s linear infinite;
+}
+
+.root[data-animation="subtle"] .clinicalPulse svg {
+  animation: clinical-pulse 2.6s ease-in-out infinite;
+}
+
+.root[data-animation="dynamic"] .clinicalPulse svg {
+  animation: clinical-pulse 1.35s ease-in-out infinite;
+}
+
+.root[data-animation="subtle"] .aiConnections path,
+.root[data-animation="dynamic"] .aiConnections path {
+  animation: ai-data-flow 10s linear infinite;
+}
+
+.root[data-animation="subtle"] .aiNodes circle {
+  animation: ai-node-pulse 3.2s ease-in-out infinite;
+}
+
+.root[data-animation="dynamic"] .aiNodes circle {
+  animation: ai-node-pulse 1.8s ease-in-out infinite;
+}
+
+.root[data-animation="subtle"] .aiNodes circle:nth-child(3n),
+.root[data-animation="dynamic"] .aiNodes circle:nth-child(3n) {
+  animation-delay: .6s;
+}
+
+.root[data-animation="subtle"] .aiDataTrack {
+  animation: ai-stream 13s ease-in-out infinite alternate;
+}
+
+.root[data-animation="dynamic"] .aiDataTrack {
+  animation: ai-stream 6.5s ease-in-out infinite alternate;
+}
+
+.root[data-animation="subtle"] .productPrototypePanel:nth-of-type(1),
+.root[data-animation="dynamic"] .productPrototypePanel:nth-of-type(1) {
+  animation: product-panel-a 4.5s ease-in-out infinite alternate;
+}
+
+.root[data-animation="subtle"] .productPrototypePanel:nth-of-type(2),
+.root[data-animation="dynamic"] .productPrototypePanel:nth-of-type(2) {
+  animation: product-panel-b 5.5s ease-in-out infinite alternate;
+}
+
+.root[data-animation="dynamic"] .productCursor {
+  animation: product-cursor 4s ease-in-out infinite;
+}
+
+.root[data-animation="subtle"] .consultingGrowthLine,
+.root[data-animation="dynamic"] .consultingGrowthLine {
+  animation: consulting-draw 2.2s ease-out both;
+}
+
+.root[data-animation="dynamic"] .consultingGrowth > svg:first-child {
+  animation: consulting-rise 2.8s ease-in-out infinite;
+}
+
 @keyframes studio-reveal {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mechanical-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes mechanical-spin-reverse {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes electrical-flow {
+  to { stroke-dashoffset: -116; }
+}
+
+@keyframes electrical-node {
+  50% {
+    fill: var(--career-accent);
+    filter: drop-shadow(0 0 7px var(--career-accent));
+  }
+}
+
+@keyframes finance-bar-rise {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes finance-ticker {
+  to { transform: translateX(-18%); }
+}
+
+@keyframes legal-mark {
+  50% { transform: rotate(-8deg); }
+}
+
+@keyframes architect-draw {
+  from { stroke-dashoffset: 530; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes architect-dash {
+  to { stroke-dashoffset: -530; }
+}
+
+@keyframes clinical-trace {
+  to { stroke-dashoffset: -264; }
+}
+
+@keyframes clinical-pulse {
+  50% { transform: scale(1.12); }
+}
+
+@keyframes ai-data-flow {
+  to { stroke-dashoffset: -150; }
+}
+
+@keyframes ai-node-pulse {
+  50% {
+    fill: var(--career-accent);
+    filter: drop-shadow(0 0 8px var(--career-accent));
+    transform: scale(1.35);
+  }
+}
+
+@keyframes ai-stream {
+  to { transform: translateX(-20%); }
+}
+
+@keyframes product-panel-a {
+  to { transform: translate(7%, 8%) rotate(-1deg); }
+}
+
+@keyframes product-panel-b {
+  to { transform: translate(-8%, -6%) rotate(1deg); }
+}
+
+@keyframes product-cursor {
+  50% { transform: translate(-2.5rem, -2rem) scale(.9); }
+}
+
+@keyframes consulting-draw {
+  from { stroke-dashoffset: 320; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes consulting-rise {
+  50% { transform: translate(6px, -7px); }
 }
 
 @media (max-width: 800px) {
@@ -766,6 +1608,10 @@
 
   .mechanicalIndex {
     position: static;
+  }
+
+  .mechanicalHero {
+    padding-right: clamp(10rem, 35vw, 15rem);
   }
 
   .mechanicalIndex ol {
@@ -787,6 +1633,26 @@
     grid-column: span 6;
   }
 
+  .electricalHeroStage {
+    grid-template-columns: 1fr;
+  }
+
+  .electricalSchematic {
+    min-height: 12rem;
+    border-top: 1px solid var(--career-border);
+    border-left: 0;
+  }
+
+  .financeDashboard {
+    grid-template-columns: minmax(9rem, .7fr) minmax(0, 1.3fr);
+  }
+
+  .financeFormula {
+    grid-column: 1 / -1;
+    min-height: 4.5rem;
+    border-top: 1px solid var(--career-border);
+  }
+
   .legalBody,
   .consultingCover,
   .clinicalBody,
@@ -796,6 +1662,14 @@
 
   .legalRail {
     display: none;
+  }
+
+  .aiHero {
+    padding-right: clamp(12rem, 38vw, 20rem);
+  }
+
+  .aiNetwork {
+    width: min(34vw, 17rem);
   }
 
   .architectSection,
@@ -810,8 +1684,16 @@
 }
 
 @media (max-width: 560px) {
-  .mechanicalHero::after {
+  .mechanicalAssembly,
+  .architectDraft,
+  .aiNetwork {
     display: none;
+  }
+
+  .mechanicalHero,
+  .architectHero,
+  .aiHero {
+    padding-right: clamp(1.5rem, 6vw, 3rem);
   }
 
   .mechanicalIndex ol,
@@ -834,6 +1716,23 @@
     left: 1.8rem;
   }
 
+  .financeDashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .financeMetric,
+  .financeChart,
+  .financeFormula {
+    min-height: 7rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--career-border);
+  }
+
+  .financeFormula {
+    grid-column: auto;
+    min-height: 4.5rem;
+  }
+
   .consultingDeck {
     grid-template-columns: 1fr;
   }
@@ -844,10 +1743,6 @@
 
   .architectHero {
     min-height: auto;
-  }
-
-  .architectHero::before {
-    display: none;
   }
 
   .architectSection,
@@ -867,10 +1762,22 @@
   .clinicalPulse {
     display: none;
   }
+
+  .clinicalEcg {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: .65rem 0 0;
+  }
+
+  .clinicalEcg > span {
+    padding-inline: 1rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .root [data-reveal] {
+  .root *,
+  .root *::before,
+  .root *::after {
     animation: none !important;
     transition: none !important;
   }

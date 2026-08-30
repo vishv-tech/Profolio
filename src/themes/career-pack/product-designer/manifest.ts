@@ -3,9 +3,9 @@ import { defineCareerTheme } from "../types";
 export const productDesignerManifest = defineCareerTheme({
   layoutKey: "career-product-designer",
   name: "Product Casebook",
-  description: "A product casebook for selected work, design process, outcomes, and experience-led storytelling.",
+  description: "An interactive product casebook with prototype boards, component layers, and process-led storytelling.",
   category: "Design",
   careerTags: ["product designer", "UX designer", "UI designer", "design researcher"],
-  styleTags: ["case study", "product thinking", "process", "project-forward"],
+  styleTags: ["prototype board", "case study", "product thinking", "UI system"],
   component: () => import("./ProductDesignerTheme"),
 });

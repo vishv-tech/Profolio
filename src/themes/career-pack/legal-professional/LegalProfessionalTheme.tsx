@@ -1,9 +1,11 @@
 import type { CSSProperties } from "react";
+import { Gavel, Scale } from "lucide-react";
 
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
   PortfolioHeader,
+  SECTION_LABELS,
   SectionRenderer,
   ThemeShell,
 } from "../shared";
@@ -28,20 +30,33 @@ export default function LegalProfessionalTheme({
       <article className={styles.legalDocument}>
         <div className={styles.legalFolio}>
           <span className={styles.microLabel}>Professional brief</span>
-          <span className={styles.microLabel}>Public portfolio record</span>
+          <span className={styles.legalFolioMark} aria-hidden="true">
+            <Gavel />
+            Public portfolio record
+          </span>
         </div>
 
-        <PortfolioHeader
-          className={styles.legalHero}
-          config={config}
-          data={data}
-          textAlign="center"
-        />
+        <div data-reveal style={revealStyle(0)}>
+          <PortfolioHeader
+            className={styles.legalHero}
+            config={config}
+            data={data}
+            textAlign="center"
+          />
+        </div>
 
         <div className={styles.legalBody}>
-          <aside className={styles.legalRail} aria-hidden="true">
-            §
-            <small>Experience · credentials · selected matters</small>
+          <aside className={styles.legalRail} aria-label="Brief index">
+            <Scale aria-hidden="true" />
+            <p className={styles.microLabel}>Brief index</p>
+            <ol>
+              {sections.map((sectionKey, index) => (
+                <li key={sectionKey}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span>{SECTION_LABELS[sectionKey]}</span>
+                </li>
+              ))}
+            </ol>
           </aside>
           <main className={styles.legalSections}>
             {sections.map((sectionKey, index) => (
