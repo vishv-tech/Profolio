@@ -23,7 +23,10 @@ import {
   parseGeminiResumeExtraction,
   type GeminiExtractionValidationIssue,
 } from "@/lib/ai/resume-schema";
-import { parseResumePdf, type ResumePdfSource } from "@/lib/resumes/resume-source";
+import {
+  parseResumePdf,
+  type ResumePdfSource,
+} from "@/lib/resumes/resume-source.server";
 import type { ResumeProcessingTiming } from "@/lib/resumes/timing";
 import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 import type { PortfolioData } from "@/types/portfolio";
