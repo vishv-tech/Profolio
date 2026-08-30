@@ -292,7 +292,7 @@ export function ThemeStore({
         }
 
         router.push(
-          `/dashboard/deployments?portfolio=${encodeURIComponent(portfolioId)}&published=1`,
+          `/dashboard?portfolio=${encodeURIComponent(portfolioId)}&published=1`,
         );
       } catch {
         setFeedback({

@@ -107,9 +107,10 @@ test("post-publish navigation stays in the authenticated workspace", () => {
 
   assert.match(
     themeStore,
-    /router\.push\([\s\S]*dashboard\/deployments\?portfolio=/,
+    /router\.push\([\s\S]*\/dashboard\?portfolio=/,
   );
   assert.match(themeStore, /&published=1/);
+  assert.doesNotMatch(themeStore, /router\.push\([\s\S]*dashboard\/deployments\?portfolio=/);
   assert.doesNotMatch(themeStore, /router\.push\(`\/p\//);
 });
 
