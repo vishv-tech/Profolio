@@ -4,31 +4,20 @@ import type { Part } from "@google/genai";
 import { ZodError } from "zod";
 
 import {
-  canStartSchemaRepair,
-  GeminiOverallTimeoutError,
-  remainingGeminiBudgetMs,
-} from "@/lib/ai/extraction-budget";
-import {
   GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
   GEMINI_OVERALL_TIMEOUT_MS,
   requestWithGeminiAvailabilityFallback,
 } from "@/lib/ai/gemini";
-import { buildPortfolioFromResumeExtraction } from "@/lib/ai/normalize-portfolio";
+import {
+  runGeminiResumePipeline,
+  type GeminiResumePipelineResult,
+} from "@/lib/ai/gemini-resume-pipeline";
 import {
   createResumeExtractionPrompt,
   RESUME_EXTRACTION_SYSTEM_PROMPT,
 } from "@/lib/ai/prompts";
-import {
-  GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
-  parseGeminiResumeExtraction,
-  type GeminiExtractionValidationIssue,
-} from "@/lib/ai/resume-schema";
-import {
-  parseResumePdf,
-  type ResumePdfSource,
-} from "@/lib/resumes/resume-source.server";
+import { GEMINI_RESUME_EXTRACTION_JSON_SCHEMA } from "@/lib/ai/resume-schema";
 import type { ResumeProcessingTiming } from "@/lib/resumes/timing";
-import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 import type { PortfolioData } from "@/types/portfolio";
 
 export type ResumeExtractionStage =
@@ -48,12 +37,8 @@ export type ResumeExtractionStage =
 
 type ResumeExtractionErrorOptions = {
   cause?: unknown;
-  issues?: GeminiExtractionValidationIssue[];
+  issues?: { path: string; code: string; message: string }[];
 };
-
-type PreparedResumeSource =
-  | { kind: "pdf"; base64: string }
-  | { kind: "text"; text: string };
 
 type ExtractPortfolioOptions = {
   timing?: ResumeProcessingTiming;
@@ -61,22 +46,10 @@ type ExtractPortfolioOptions = {
 
 type GeminiRequestPhase = "initial" | "repair";
 
-const EMPTY_PDF_SOURCE: ResumePdfSource = {
-  diagnostics: {
-    annotationPageFailures: 0,
-    pageFailures: 0,
-    textPageFailures: 0,
-  },
-  links: [],
-  pageCount: 0,
-  text: "",
-  useTextForGemini: false,
-};
-
 export class ResumeExtractionError extends Error {
   readonly stage: ResumeExtractionStage;
   readonly cause?: unknown;
-  readonly issues?: GeminiExtractionValidationIssue[];
+  readonly issues?: { path: string; code: string; message: string }[];
 
   constructor(
     stage: ResumeExtractionStage,
@@ -192,21 +165,6 @@ export function logResumeExtractionError(
   });
 }
 
-function sourcePart(source: PreparedResumeSource): Part {
-  if (source.kind === "text") {
-    return {
-      text: `--- BEGIN UNTRUSTED RESUME TEXT ---\n${source.text}\n--- END UNTRUSTED RESUME TEXT ---`,
-    };
-  }
-
-  return {
-    inlineData: {
-      data: source.base64,
-      mimeType: "application/pdf",
-    },
-  };
-}
-
 function logGeminiAttempt(
   stage: "model-attempt-end" | "model-attempt-start",
   details: Record<string, number | string>,
@@ -216,8 +174,17 @@ function logGeminiAttempt(
   }
 }
 
+function pdfSourcePart(base64Pdf: string): Part {
+  return {
+    inlineData: {
+      data: base64Pdf,
+      mimeType: "application/pdf",
+    },
+  };
+}
+
 async function requestExtraction(
-  source: PreparedResumeSource,
+  base64Pdf: string,
   improveWithAi: boolean,
   repairAttempt: boolean,
   overallSignal: AbortSignal,
@@ -226,234 +193,155 @@ async function requestExtraction(
   const phase: GeminiRequestPhase = repairAttempt ? "repair" : "initial";
   const parts: Part[] = [
     {
-      text: createResumeExtractionPrompt(
+      text: createResumeExtractionPrompt(improveWithAi, repairAttempt, "pdf"),
+    },
+    pdfSourcePart(base64Pdf),
+  ];
+  const { model, value: response } =
+    await requestWithGeminiAvailabilityFallback(
+      (client, selectedModel, attemptSignal) =>
+        client.models.generateContent({
+          model: selectedModel,
+          contents: [{ role: "user", parts }],
+          config: {
+            abortSignal: attemptSignal,
+            httpOptions: {
+              retryOptions: { attempts: 1 },
+              timeout: GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
+            },
+            maxOutputTokens: 32_768,
+            responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
+            responseMimeType: "application/json",
+            systemInstruction: RESUME_EXTRACTION_SYSTEM_PROMPT,
+          },
+        }),
+      {
+        onAttempt: (result) => {
+          const outcome =
+            result.outcome === "timeout" ? "attempt_timeout" : result.outcome;
+          logGeminiAttempt("model-attempt-end", {
+            attemptNumber: result.attemptNumber,
+            durationMs: Math.max(0, Math.round(result.durationMs)),
+            inputMode: "pdf",
+            model: result.model,
+            outcome,
+            phase,
+          });
+          timing?.record(
+            `gemini-${result.model}`,
+            result.durationMs,
+            `${phase}-${outcome}`,
+          );
+        },
+        onAttemptStart: ({ attemptNumber, model }) => {
+          logGeminiAttempt("model-attempt-start", {
+            attemptNumber,
+            inputMode: "pdf",
+            model,
+            phase,
+          });
+        },
+        overallSignal,
+      },
+    );
+
+  return {
+    model,
+    text: response.text?.trim() ?? "",
+  };
+}
+
+function developmentAiFailureIsForced() {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.RESUME_DEV_FORCE_AI_UNAVAILABLE === "1"
+  );
+}
+
+export async function runSafeGeminiExtraction(
+  pdfBytes: Uint8Array,
+  improveWithAi: boolean,
+  { timing }: ExtractPortfolioOptions = {},
+): Promise<GeminiResumePipelineResult> {
+  const startedAt = performance.now();
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[resume-extraction]", { stage: "gemini-start" });
+  }
+
+  if (developmentAiFailureIsForced()) {
+    const result: GeminiResumePipelineResult = {
+      success: false,
+      source: "gemini",
+      reason: "unavailable",
+      error: new Error("Development-forced Gemini unavailability."),
+    };
+    timing?.record("gemini-total", performance.now() - startedAt, result.reason);
+    return result;
+  }
+
+  const base64Pdf = timing
+    ? timing.measureSync("gemini-input-preparation", () =>
+        Buffer.from(pdfBytes).toString("base64"),
+      )
+    : Buffer.from(pdfBytes).toString("base64");
+  const result = await runGeminiResumePipeline({
+    overallTimeoutMs: GEMINI_OVERALL_TIMEOUT_MS,
+    request: (repairAttempt, overallSignal) =>
+      requestExtraction(
+        base64Pdf,
         improveWithAi,
         repairAttempt,
-        source.kind,
+        overallSignal,
+        timing,
       ),
-    },
-    sourcePart(source),
-  ];
-
-  try {
-    const { model, value: response } =
-      await requestWithGeminiAvailabilityFallback(
-        (client, selectedModel, attemptSignal) =>
-          client.models.generateContent({
-            model: selectedModel,
-            contents: [{ role: "user", parts }],
-            config: {
-              abortSignal: attemptSignal,
-              httpOptions: {
-                retryOptions: { attempts: 1 },
-                timeout: GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
-              },
-              maxOutputTokens: 32_768,
-              responseJsonSchema: GEMINI_RESUME_EXTRACTION_JSON_SCHEMA,
-              responseMimeType: "application/json",
-              systemInstruction: RESUME_EXTRACTION_SYSTEM_PROMPT,
-            },
-          }),
-        {
-          onAttempt: (result) => {
-            const outcome =
-              result.outcome === "timeout"
-                ? "attempt_timeout"
-                : result.outcome;
-            logGeminiAttempt("model-attempt-end", {
-              attemptNumber: result.attemptNumber,
-              durationMs: Math.max(0, Math.round(result.durationMs)),
-              inputMode: source.kind,
-              model: result.model,
-              outcome,
-              phase,
-            });
-            timing?.record(
-              `gemini-${result.model}`,
-              result.durationMs,
-              `${phase}-${outcome}`,
-            );
-          },
-          onAttemptStart: ({ attemptNumber, model }) => {
-            logGeminiAttempt("model-attempt-start", {
-              attemptNumber,
-              inputMode: source.kind,
-              model,
-              phase,
-            });
-          },
-          overallSignal,
-        },
-      );
-
-    return {
-      model,
-      text: response.text?.trim() ?? "",
-    };
-  } catch (error) {
-    throw new ResumeExtractionError(
-      "gemini-request",
-      "The Gemini request failed.",
-      { cause: error },
-    );
-  }
-}
-
-function prepareGeminiSource(
-  source: ResumePdfSource,
-  pdfBytes: Uint8Array,
-): PreparedResumeSource {
-  return source.useTextForGemini
-    ? { kind: "text", text: source.text }
-    : { kind: "pdf", base64: Buffer.from(pdfBytes).toString("base64") };
-}
-
-function logPdfSourceDiagnostics(source: ResumePdfSource) {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  console.info("[resume-extraction]", {
-    stage: "pdf-deterministic-parse",
-    annotationLinks: source.links.length,
-    inputMode: source.useTextForGemini ? "text" : "pdf",
-    pageCount: source.pageCount,
-    textCharacters: source.text.length,
-    ...source.diagnostics,
+    timing,
   });
+  const durationMs = performance.now() - startedAt;
+  timing?.record(
+    "gemini-total",
+    durationMs,
+    result.success ? "success" : result.reason,
+  );
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[resume-extraction]", {
+      stage: "gemini-total-end",
+      durationMs: Math.max(0, Math.round(durationMs)),
+      outcome: result.success ? "success" : result.reason,
+      ...(result.success ? { model: result.model } : {}),
+    });
+  }
+
+  if (!result.success && result.error) {
+    logResumeExtractionError("gemini-request", result.error);
+  }
+
+  return result;
 }
 
 export async function extractPortfolioFromPdf(
   pdfBytes: Uint8Array,
   improveWithAi: boolean,
-  { timing }: ExtractPortfolioOptions = {},
+  options: ExtractPortfolioOptions = {},
 ): Promise<PortfolioData> {
-  let source = EMPTY_PDF_SOURCE;
-
-  try {
-    source = timing
-      ? await timing.measure("pdf-deterministic-parse", () =>
-          parseResumePdf(pdfBytes),
-        )
-      : await parseResumePdf(pdfBytes);
-    logPdfSourceDiagnostics(source);
-  } catch (error) {
-    // Local parsing is an enhancement; Gemini's existing PDF path remains the fallback.
-    logResumeExtractionError("pdf-deterministic-parse", error);
-  }
-
-  const preparedSource = timing
-    ? timing.measureSync("gemini-input-preparation", () =>
-        prepareGeminiSource(source, pdfBytes),
-      )
-    : prepareGeminiSource(source, pdfBytes);
-  const overallStartedAt = performance.now();
-  const overallDeadline = overallStartedAt + GEMINI_OVERALL_TIMEOUT_MS;
-  const overallController = new AbortController();
-  const overallTimeout = setTimeout(
-    () =>
-      overallController.abort(
-        new GeminiOverallTimeoutError(GEMINI_OVERALL_TIMEOUT_MS),
-      ),
-    GEMINI_OVERALL_TIMEOUT_MS,
+  const result = await runSafeGeminiExtraction(
+    pdfBytes,
+    improveWithAi,
+    options,
   );
-  let lastFailure: Exclude<
-    ReturnType<typeof parseGeminiResumeExtraction>,
-    { success: true }
-  > | null = null;
 
-  try {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      if (attempt === 1 && !canStartSchemaRepair(overallDeadline)) {
-        const remainingMs = Math.round(
-          remainingGeminiBudgetMs(overallDeadline),
-        );
-        timing?.record("gemini-schema-repair", 0, "insufficient-budget");
-
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[resume-extraction]", {
-            stage: "schema-repair-skipped",
-            reason: "insufficient-overall-budget",
-            remainingMs,
-          });
-        }
-
-        break;
-      }
-
-      const response = await requestExtraction(
-        preparedSource,
-        improveWithAi,
-        attempt === 1,
-        overallController.signal,
-        timing,
-      );
-      const parsed = timing
-        ? timing.measureSync("json-parse", () =>
-            parseGeminiResumeExtraction(response.text),
-          )
-        : parseGeminiResumeExtraction(response.text);
-
-      if (parsed.success) {
-        let portfolio: PortfolioData;
-
-        try {
-          portfolio = timing
-            ? timing.measureSync("portfolio-normalization", () =>
-                buildPortfolioFromResumeExtraction(parsed.data, {
-                  deterministicLinks: source.links,
-                }),
-              )
-            : buildPortfolioFromResumeExtraction(parsed.data, {
-                deterministicLinks: source.links,
-              });
-        } catch (error) {
-          throw new ResumeExtractionError(
-            "normalization",
-            "The extracted resume could not be normalized.",
-            { cause: error },
-          );
-        }
-
-        try {
-          const validated = timing
-            ? timing.measureSync("portfolio-validation", () =>
-                PortfolioDataSchema.parse(portfolio),
-              )
-            : PortfolioDataSchema.parse(portfolio);
-
-          if (process.env.NODE_ENV === "development") {
-            console.info(
-              `[resume-extraction] extraction succeeded with ${response.model}`,
-            );
-          }
-
-          return validated;
-        } catch (error) {
-          throw new ResumeExtractionError(
-            "portfolio-validation",
-            "The extracted resume did not match PortfolioData.",
-            { cause: error },
-          );
-        }
-      }
-
-      lastFailure = parsed;
-    }
-  } finally {
-    clearTimeout(overallTimeout);
-  }
-
-  if (lastFailure?.reason === "schema") {
-    throw new ResumeExtractionError(
-      "extraction-schema",
-      "The Gemini response did not match the extraction schema.",
-      { issues: lastFailure.issues },
-    );
+  if (result.success) {
+    return result.data;
   }
 
   throw new ResumeExtractionError(
-    "response-json",
-    "The Gemini response was not valid JSON.",
+    result.reason === "invalid-response"
+      ? "extraction-schema"
+      : result.reason === "invalid-data"
+        ? "portfolio-validation"
+        : "gemini-request",
+    "Gemini resume extraction failed.",
+    { cause: result.error, issues: result.issues },
   );
 }

@@ -1,9 +1,8 @@
 import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 import type { GeminiResumeExtraction } from "@/lib/ai/resume-schema";
 import {
-  mergeResumeLinks,
+  deduplicateResumeSourceLinks,
   normalizeExternalUrl,
-  type ResumeSourceLink,
 } from "@/lib/resumes/links";
 import type { PortfolioData } from "@/types/portfolio";
 
@@ -11,7 +10,6 @@ type IdFactory = () => string;
 
 type NormalizeResumeOptions = {
   createId?: IdFactory;
-  deterministicLinks?: readonly ResumeSourceLink[];
 };
 
 function cleanText(value: string) {
@@ -28,10 +26,7 @@ function cleanExternalUrl(value: string) {
 
 export function buildPortfolioFromResumeExtraction(
   extraction: GeminiResumeExtraction,
-  {
-    createId = () => crypto.randomUUID(),
-    deterministicLinks = [],
-  }: NormalizeResumeOptions = {},
+  { createId = () => crypto.randomUUID() }: NormalizeResumeOptions = {},
 ): PortfolioData {
   return {
     personal: {
@@ -98,7 +93,10 @@ export function buildPortfolioFromResumeExtraction(
       credentialId: cleanText(item.credentialId),
       credentialUrl: cleanExternalUrl(item.credentialUrl),
     })),
-    links: mergeResumeLinks(deterministicLinks, extraction.links, createId),
+    links: deduplicateResumeSourceLinks(extraction.links).map((link) => ({
+      id: createId(),
+      ...link,
+    })),
     languages: extraction.languages.map((item) => ({
       id: createId(),
       name: cleanText(item.name),

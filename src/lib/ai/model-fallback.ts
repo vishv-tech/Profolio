@@ -141,8 +141,21 @@ export function isTransientGeminiAvailabilityError(error: unknown) {
   }
 
   return (
-    signals.statuses.includes(503) ||
-    signals.codes.includes("UNAVAILABLE") ||
+    signals.statuses.some((status) => [500, 502, 503, 504].includes(status)) ||
+    signals.codes.some((code) =>
+      [
+        "DEADLINE_EXCEEDED",
+        "EAI_AGAIN",
+        "ECONNRESET",
+        "ENETUNREACH",
+        "ETIMEDOUT",
+        "INTERNAL",
+        "UNAVAILABLE",
+      ].includes(code),
+    ) ||
+    /\b(?:connection reset|network error|socket hang up|timed? out)\b/iu.test(
+      message,
+    ) ||
     clearlySignalsTransientCapacity(message)
   );
 }

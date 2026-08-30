@@ -148,7 +148,7 @@ test("infers common link types without changing link content", () => {
   assert.equal(portfolio.links[0].url, "https://github.com/avery");
 });
 
-test("merges deterministic PDF links ahead of Gemini links and stays valid", () => {
+test("normalizes Gemini links without adding another extraction source", () => {
   const extraction = sparseExtraction();
   extraction.links = [
     {
@@ -156,22 +156,15 @@ test("merges deterministic PDF links ahead of Gemini links and stays valid", () 
       label: "LinkedIn profile",
       url: "https://linkedin.com/in/avery/",
     },
+    {
+      type: "linkedin",
+      label: "Duplicate",
+      url: "https://linkedin.com/in/avery",
+    },
   ];
   let id = 0;
   const portfolio = normalizeResumeExtraction(extraction, {
     createId: () => `generated-${(id += 1)}`,
-    deterministicLinks: [
-      {
-        type: "linkedin",
-        label: "LinkedIn",
-        url: "https://linkedin.com/in/avery",
-      },
-      {
-        type: "github",
-        label: "GitHub",
-        url: "https://github.com/avery",
-      },
-    ],
   });
 
   assert.deepEqual(
@@ -180,12 +173,7 @@ test("merges deterministic PDF links ahead of Gemini links and stays valid", () 
       {
         label: "LinkedIn",
         type: "linkedin",
-        url: "https://linkedin.com/in/avery",
-      },
-      {
-        label: "GitHub",
-        type: "github",
-        url: "https://github.com/avery",
+        url: "https://linkedin.com/in/avery/",
       },
     ],
   );

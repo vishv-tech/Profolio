@@ -121,6 +121,24 @@ test("falls through for an explicit transient capacity 429", async () => {
   assert.equal(result.model, "fallback");
 });
 
+test("treats retryable server and network failures as transient", () => {
+  for (const status of [500, 502, 503, 504]) {
+    assert.equal(
+      isTransientGeminiAvailabilityError(
+        Object.assign(new Error("Provider failure"), { status }),
+      ),
+      true,
+    );
+  }
+
+  assert.equal(
+    isTransientGeminiAvailabilityError(
+      Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }),
+    ),
+    true,
+  );
+});
+
 test("recognizes SDK JSON availability details without matching other errors", () => {
   assert.equal(
     isTransientGeminiAvailabilityError(
@@ -163,6 +181,33 @@ test("reports a safe final failure when all models are transiently unavailable",
   );
 
   assert.deepEqual(attempts, ["primary", "fallback", "last"]);
+});
+
+test("does not start a fallback model before the active model settles", async () => {
+  const attempts: string[] = [];
+  let rejectPrimary: ((error: unknown) => void) | undefined;
+  const resultPromise = runWithModelFallback({
+    models: ["primary", "fallback"] as const,
+    request: async (model) => {
+      attempts.push(model);
+
+      if (model === "primary") {
+        return new Promise<string>((_, reject) => {
+          rejectPrimary = reject;
+        });
+      }
+
+      return "success";
+    },
+  });
+
+  await Promise.resolve();
+  assert.deepEqual(attempts, ["primary"]);
+  rejectPrimary?.(Object.assign(new Error("UNAVAILABLE"), { status: 503 }));
+
+  const result = await resultPromise;
+  assert.equal(result.model, "fallback");
+  assert.deepEqual(attempts, ["primary", "fallback"]);
 });
 
 test("a hung model attempt times out and advances without consuming the overall budget", async () => {

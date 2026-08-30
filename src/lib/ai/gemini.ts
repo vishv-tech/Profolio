@@ -2,6 +2,7 @@ import "server-only";
 
 import { GoogleGenAI } from "@google/genai";
 
+import { GeminiConfigurationError } from "@/lib/ai/extraction-errors";
 import {
   runWithModelFallback,
   type ModelAttemptResult,
@@ -13,8 +14,8 @@ export const GEMINI_RESUME_MODELS = [
   "gemini-3.6-flash",
   "gemini-3.5-flash",
 ] as const;
-export const GEMINI_OVERALL_TIMEOUT_MS = 120_000;
-export const GEMINI_MODEL_ATTEMPT_TIMEOUT_MS = 30_000;
+export const GEMINI_OVERALL_TIMEOUT_MS = 30_000;
+export const GEMINI_MODEL_ATTEMPT_TIMEOUT_MS = 12_000;
 
 export type GeminiResumeModel = (typeof GEMINI_RESUME_MODELS)[number];
 
@@ -31,7 +32,7 @@ export function getGeminiClient() {
   }
 
   if (!apiKey) {
-    throw new Error("Gemini resume extraction is not configured.");
+    throw new GeminiConfigurationError();
   }
 
   geminiClient ??= new GoogleGenAI({ apiKey });
