@@ -1,10 +1,4 @@
-import {
-  deduplicateResumeSourceLinks,
-  extractLinksFromPdfAnnotations,
-  extractVisibleResumeLinks,
-  type ResumeSourceLink,
-} from "@/lib/resumes/links";
-import { cleanResumeText, isUsableResumeText } from "@/lib/resumes/text";
+import { cleanResumeText } from "@/lib/resumes/text";
 
 type PdfTextItem = {
   hasEOL?: boolean;
@@ -13,14 +7,11 @@ type PdfTextItem = {
 
 export type ResumePdfSource = {
   diagnostics: {
-    annotationPageFailures: number;
     pageFailures: number;
     textPageFailures: number;
   };
-  links: ResumeSourceLink[];
   pageCount: number;
   text: string;
-  useTextForGemini: boolean;
 };
 
 function isPdfTextItem(value: unknown): value is PdfTextItem {
@@ -65,10 +56,7 @@ export async function parseResumePdf(
     useWorkerFetch: false,
     verbosity: VerbosityLevel.ERRORS,
   });
-  const annotationLinks: ResumeSourceLink[] = [];
-  const visibleLinks: ResumeSourceLink[] = [];
   const pageTexts: string[] = [];
-  let annotationPageFailures = 0;
   let pageFailures = 0;
   let textPageFailures = 0;
 
@@ -85,27 +73,12 @@ export async function parseResumePdf(
         continue;
       }
 
-      const [textResult, annotationResult] = await Promise.allSettled([
-        page.getTextContent(),
-        page.getAnnotations({ intent: "display" }),
-      ]);
-      const textItems =
-        textResult.status === "fulfilled" ? textResult.value.items : [];
-
-      if (textResult.status === "fulfilled") {
-        const pageText = cleanResumeText(textFromItems(textItems));
+      try {
+        const textContent = await page.getTextContent();
+        const pageText = cleanResumeText(textFromItems(textContent.items));
         pageTexts.push(pageText ? `[Page ${pageNumber}]\n${pageText}` : "");
-        visibleLinks.push(...extractVisibleResumeLinks(pageText));
-      } else {
+      } catch {
         textPageFailures += 1;
-      }
-
-      if (annotationResult.status === "fulfilled") {
-        annotationLinks.push(
-          ...extractLinksFromPdfAnnotations(annotationResult.value, textItems),
-        );
-      } else {
-        annotationPageFailures += 1;
       }
 
       page.cleanup();
@@ -115,20 +88,11 @@ export async function parseResumePdf(
 
     return {
       diagnostics: {
-        annotationPageFailures,
         pageFailures,
         textPageFailures,
       },
-      links: deduplicateResumeSourceLinks([
-        ...annotationLinks,
-        ...visibleLinks,
-      ]),
       pageCount: document.numPages,
       text,
-      useTextForGemini:
-        pageFailures === 0 &&
-        textPageFailures === 0 &&
-        isUsableResumeText(text),
     };
   } finally {
     await loadingTask.destroy();

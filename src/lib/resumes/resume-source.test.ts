@@ -83,14 +83,12 @@ test("parses useful text from a synthetic resume PDF without a copied worker", a
 
   assert.equal(result.pageCount, 1);
   assert.deepEqual(result.diagnostics, {
-    annotationPageFailures: 0,
     pageFailures: 0,
     textPageFailures: 0,
   });
   assert.match(result.text, /Avery Student/u);
   assert.match(result.text, /avery\.student@example\.test/u);
   assert.match(result.text, /Campus Planner/u);
-  assert.equal(result.useTextForGemini, true);
 });
 
 test("creates schema-valid deterministic PortfolioData from a real text PDF", async () => {

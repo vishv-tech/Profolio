@@ -18,7 +18,6 @@ import {
 } from "@/lib/ai/prompts";
 import { GEMINI_RESUME_EXTRACTION_JSON_SCHEMA } from "@/lib/ai/resume-schema";
 import type { ResumeProcessingTiming } from "@/lib/resumes/timing";
-import type { PortfolioData } from "@/types/portfolio";
 
 export type ResumeExtractionStage =
   | "database-read"
@@ -282,9 +281,17 @@ export async function runSafeGeminiExtraction(
 
   const base64Pdf = timing
     ? timing.measureSync("gemini-input-preparation", () =>
-        Buffer.from(pdfBytes).toString("base64"),
+        Buffer.from(
+          pdfBytes.buffer,
+          pdfBytes.byteOffset,
+          pdfBytes.byteLength,
+        ).toString("base64"),
       )
-    : Buffer.from(pdfBytes).toString("base64");
+    : Buffer.from(
+        pdfBytes.buffer,
+        pdfBytes.byteOffset,
+        pdfBytes.byteLength,
+      ).toString("base64");
   const result = await runGeminiResumePipeline({
     overallTimeoutMs: GEMINI_OVERALL_TIMEOUT_MS,
     request: (repairAttempt, overallSignal) =>
@@ -318,30 +325,4 @@ export async function runSafeGeminiExtraction(
   }
 
   return result;
-}
-
-export async function extractPortfolioFromPdf(
-  pdfBytes: Uint8Array,
-  improveWithAi: boolean,
-  options: ExtractPortfolioOptions = {},
-): Promise<PortfolioData> {
-  const result = await runSafeGeminiExtraction(
-    pdfBytes,
-    improveWithAi,
-    options,
-  );
-
-  if (result.success) {
-    return result.data;
-  }
-
-  throw new ResumeExtractionError(
-    result.reason === "invalid-response"
-      ? "extraction-schema"
-      : result.reason === "invalid-data"
-        ? "portfolio-validation"
-        : "gemini-request",
-    "Gemini resume extraction failed.",
-    { cause: result.error, issues: result.issues },
-  );
 }

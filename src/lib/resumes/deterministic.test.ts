@@ -175,14 +175,11 @@ test("safe deterministic pipeline resolves failures without throwing", async () 
   const unusableText = await runSafeDeterministicPipeline(new Uint8Array(), {
     parsePdf: async () => ({
       diagnostics: {
-        annotationPageFailures: 0,
         pageFailures: 0,
         textPageFailures: 0,
       },
-      links: [],
       pageCount: 1,
       text: "tiny",
-      useTextForGemini: false,
     }),
   });
 
