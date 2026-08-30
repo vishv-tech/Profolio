@@ -193,12 +193,12 @@ test("candidate filters and automatic selection stay conservative", () => {
 
 test("resume processing keeps media extraction behind a non-blocking boundary", () => {
   const source = readFileSync("src/app/upload/actions.ts", "utf8");
-  const aiIndex = source.indexOf("extractPortfolioFromPdf(");
+  const extractionIndex = source.indexOf("extractResumeWithFallback(");
   const mediaIndex = source.lastIndexOf("addBestEffortProfileMedia({");
   const databaseIndex = source.indexOf('"database-write"', mediaIndex);
 
-  assert.equal(aiIndex >= 0, true);
-  assert.equal(mediaIndex > aiIndex, true);
+  assert.equal(extractionIndex >= 0, true);
+  assert.equal(mediaIndex > extractionIndex, true);
   assert.equal(databaseIndex > mediaIndex, true);
   assert.match(source, /async function addBestEffortProfileMedia[\s\S]*?try \{[\s\S]*?extractResumeProfileMedia[\s\S]*?catch \{[\s\S]*?return \{ automaticProfileImageUrl: "", candidates: \[\] \}/u);
   assert.match(source, /Profile media is optional[\s\S]*?failed resume/u);

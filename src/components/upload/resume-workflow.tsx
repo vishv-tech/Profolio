@@ -93,7 +93,7 @@ export function ResumeWorkflow({
     (resumeId: string) => {
       setResume((current) =>
         current?.id === resumeId
-          ? { ...current, status: "processing" }
+          ? { ...current, extractionSource: null, status: "processing" }
           : current,
       );
       setFeedback(null);
@@ -108,6 +108,7 @@ export function ResumeWorkflow({
               current?.id === resumeId
                 ? {
                     ...current,
+                    extractionSource: result.extractionSource,
                     portfolio: result.portfolio,
                     profilePhotoCandidates: result.profilePhotoCandidates,
                     status: "completed",
@@ -223,6 +224,7 @@ export function ResumeWorkflow({
 
         setResume({
           ...result.resume,
+          extractionSource: null,
           portfolio: null,
           profilePhotoCandidates: [],
         });
@@ -297,8 +299,8 @@ export function ResumeWorkflow({
             </CardTitle>
             <CardDescription className="max-w-2xl text-base leading-7">
               Upload one PDF up to 10 MB. It stays in your private Supabase
-              Storage folder while Gemini converts it into editable portfolio
-              data.
+              Storage folder while our extraction pipeline converts it into
+              editable portfolio data.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleUpload}>
@@ -467,6 +469,16 @@ export function ResumeWorkflow({
               Upload another
             </Button>
           </div>
+
+          {resume.extractionSource === "deterministic" ? (
+            <FeedbackMessage
+              feedback={{
+                tone: "info",
+                message:
+                  "AI extraction was temporarily unavailable. We used basic resume extraction instead, so please review your information.",
+              }}
+            />
+          ) : null}
 
           <ResumeReviewEditor
             improveWithAi={resume.improveWithAi}

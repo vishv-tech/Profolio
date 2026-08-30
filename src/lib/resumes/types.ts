@@ -1,4 +1,5 @@
 import type { ProfilePhotoCandidate } from "@/lib/profile-media/types";
+import type { ResumeExtractionSource } from "@/lib/resumes/extraction-coordinator";
 import type { PortfolioData } from "@/types/portfolio";
 
 export const RESUME_STATUSES = [
@@ -15,6 +16,7 @@ export type ResumeWorkflowState = {
   fileName: string;
   status: ResumeStatus;
   improveWithAi: boolean;
+  extractionSource: ResumeExtractionSource | null;
   profilePhotoCandidates: ProfilePhotoCandidate[];
   portfolio: PortfolioData | null;
 };
@@ -32,6 +34,7 @@ export type UploadResumeResult =
 export type ProcessResumeResult =
   | {
       success: true;
+      extractionSource: ResumeExtractionSource | null;
       portfolio: PortfolioData;
       profilePhotoCandidates: ProfilePhotoCandidate[];
     }

@@ -47,6 +47,7 @@ export async function getResumeWorkflowState(
     fileName: data.file_name,
     status: status.data,
     improveWithAi: data.improve_with_ai,
+    extractionSource: null,
     profilePhotoCandidates:
       status.data === "completed"
         ? await listResumeProfileCandidates(user.userId, data.id, supabase)

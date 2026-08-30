@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { runSafeDeterministicPipeline } from "@/lib/resumes/deterministic-pipeline";
+import { coordinateResumeExtraction } from "@/lib/resumes/extraction-coordinator";
 import { parseResumePdf } from "@/lib/resumes/resume-source";
 import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 
@@ -116,4 +117,24 @@ test("creates schema-valid deterministic PortfolioData from a real text PDF", as
     "Git",
     "accessibility",
   ]);
+});
+
+test("all-AI-fail still selects deterministic data from the uploaded PDF", async () => {
+  const result = await coordinateResumeExtraction({
+    improveWithAi: true,
+    pdfBytes: SYNTHETIC_RESUME_PDF,
+    runDeterministic: (bytes) => runSafeDeterministicPipeline(bytes),
+    runGemini: async () => ({
+      success: false,
+      source: "gemini",
+      reason: "unavailable",
+    }),
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.source, "deterministic");
+    assert.equal(result.data.personal.fullName, "Avery Student");
+    assert.equal(PortfolioDataSchema.safeParse(result.data).success, true);
+  }
 });

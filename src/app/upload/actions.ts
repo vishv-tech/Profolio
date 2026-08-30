@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import {
-  extractPortfolioFromPdf,
   logResumeExtractionError,
   ResumeExtractionError,
 } from "@/lib/ai/resume-extraction";
@@ -17,6 +16,7 @@ import {
 } from "@/lib/profile-media/resume-storage";
 import type { ProfilePhotoCandidate } from "@/lib/profile-media/types";
 import { parseStoredPortfolio, toDatabaseJson } from "@/lib/resumes/json";
+import { extractResumeWithFallback } from "@/lib/resumes/extraction-coordinator.server";
 import { extractResumeProfileMedia } from "@/lib/resumes/media";
 import { ResumeProcessingTiming } from "@/lib/resumes/timing";
 import {
@@ -43,7 +43,7 @@ const ResumeStatusSchema = z.enum(RESUME_STATUSES);
 const PROCESSING_MESSAGE =
   "This resume is already being processed. Refresh shortly to see the result.";
 const PROCESSING_ERROR_MESSAGE =
-  "We could not process this resume. Please try again.";
+  "We couldn't reliably read this resume. Please try another text-based PDF or try again.";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -262,7 +262,12 @@ export async function processResume(
         : [];
 
       return portfolio
-        ? { success: true, portfolio, profilePhotoCandidates }
+        ? {
+            success: true,
+            extractionSource: null,
+            portfolio,
+            profilePhotoCandidates,
+          }
         : {
             success: false,
             message: PROCESSING_ERROR_MESSAGE,
@@ -345,11 +350,20 @@ export async function processResume(
         );
       }
 
-      let portfolio = await extractPortfolioFromPdf(
+      const extraction = await extractResumeWithFallback(
         pdfBytes,
         claim.improve_with_ai,
-        { timing },
+        timing,
       );
+
+      if (!extraction.success) {
+        throw new ResumeExtractionError(
+          "process-resume",
+          "Neither resume extraction pipeline produced usable data.",
+        );
+      }
+
+      let portfolio = extraction.data;
       const profileMedia = await addBestEffortProfileMedia({
         pdfBytes,
         resumeId: claim.id,
@@ -409,6 +423,7 @@ export async function processResume(
       outcome = "success";
       return {
         success: true,
+        extractionSource: extraction.source,
         portfolio,
         profilePhotoCandidates: profileMedia.candidates,
       };
