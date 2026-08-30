@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { runSafeDeterministicPipeline } from "@/lib/resumes/deterministic-pipeline";
 import { parseResumePdf } from "@/lib/resumes/resume-source";
+import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 
 function pdfObject(id: number, body: string) {
   return Buffer.from(`${id} 0 obj\n${body}\nendobj\n`, "ascii");
@@ -59,18 +61,24 @@ function createTextResumePdf(lines: readonly string[]) {
   );
 }
 
+const SYNTHETIC_RESUME_PDF = createTextResumePdf([
+  "Avery Student",
+  "avery.student@example.test | +1 202 555 0142",
+  "Location: Austin, Texas",
+  "PROFESSIONAL SUMMARY",
+  "Software developer focused on reliable and accessible web products.",
+  "EDUCATION",
+  "Institution: Example Institute",
+  "Degree: Bachelor of Technology",
+  "PROJECTS",
+  "Project: Campus Planner",
+  "Description: Scheduling tool for student teams",
+  "TECHNICAL SKILLS",
+  "Languages: TypeScript, React, Node.js, SQL, testing, Git, accessibility",
+]);
+
 test("parses useful text from a synthetic resume PDF without a copied worker", async () => {
-  const result = await parseResumePdf(
-    createTextResumePdf([
-      "Avery Student",
-      "avery.student@example.test | +1 202 555 0142",
-      "Professional Summary",
-      "Software developer focused on reliable and accessible web products.",
-      "Education: Example Institute, Bachelor of Technology, 2021 - 2025",
-      "Projects: Campus Planner built with TypeScript, React, and PostgreSQL",
-      "Skills: TypeScript, React, Node.js, SQL, testing, Git, accessibility",
-    ]),
-  );
+  const result = await parseResumePdf(SYNTHETIC_RESUME_PDF);
 
   assert.equal(result.pageCount, 1);
   assert.deepEqual(result.diagnostics, {
@@ -82,4 +90,30 @@ test("parses useful text from a synthetic resume PDF without a copied worker", a
   assert.match(result.text, /avery\.student@example\.test/u);
   assert.match(result.text, /Campus Planner/u);
   assert.equal(result.useTextForGemini, true);
+});
+
+test("creates schema-valid deterministic PortfolioData from a real text PDF", async () => {
+  const result = await runSafeDeterministicPipeline(SYNTHETIC_RESUME_PDF);
+
+  assert.equal(result.success, true);
+
+  if (!result.success) {
+    return;
+  }
+
+  assert.equal(PortfolioDataSchema.safeParse(result.data).success, true);
+  assert.equal(result.data.personal.fullName, "Avery Student");
+  assert.equal(result.data.personal.email, "avery.student@example.test");
+  assert.equal(result.data.personal.phone, "+1 202 555 0142");
+  assert.equal(result.data.education[0].institution, "Example Institute");
+  assert.equal(result.data.projects[0].name, "Campus Planner");
+  assert.deepEqual(result.data.skills[0].items, [
+    "TypeScript",
+    "React",
+    "Node.js",
+    "SQL",
+    "testing",
+    "Git",
+    "accessibility",
+  ]);
 });
