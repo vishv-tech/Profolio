@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PortfolioViewTracker } from "@/components/analytics/PortfolioViewTracker";
 import { getPublishedPortfolioBySlug } from "@/lib/portfolios/queries";
 import { loadThemeComponent } from "@/themes";
 
@@ -21,5 +22,10 @@ export default async function PublicPortfolioPage({
     notFound();
   }
 
-  return <Theme config={portfolio.themeConfig} data={portfolio.publishedContent} />;
+  return (
+    <>
+      <PortfolioViewTracker slug={portfolio.slug} />
+      <Theme config={portfolio.themeConfig} data={portfolio.publishedContent} />
+    </>
+  );
 }
