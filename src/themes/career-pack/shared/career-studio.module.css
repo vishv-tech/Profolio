@@ -38,6 +38,15 @@
   transform: translateY(-2px);
 }
 
+.root[data-animation="none"] .sectionCard {
+  transition: none;
+}
+
+.root[data-animation="none"] .sectionCard:focus-within,
+.root[data-animation="none"] .sectionCard:hover {
+  transform: none;
+}
+
 .microLabel {
   color: var(--career-muted);
   font-size: .67rem;
@@ -322,6 +331,219 @@
   grid-column: 1 / -1;
 }
 
+.finance::before {
+  opacity: .24;
+  background-image: linear-gradient(
+    90deg,
+    transparent calc(50% - 1px),
+    var(--career-border) 50%,
+    transparent calc(50% + 1px)
+  );
+  background-size: 10rem 100%;
+}
+
+.financeFrame {
+  width: min(100% - 1.5rem, 74rem);
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 5vw, 4.5rem);
+}
+
+.financeMasthead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  padding: .75rem 0;
+  border-block: 1px solid var(--career-text);
+}
+
+.financeHero {
+  padding: clamp(1.75rem, 5vw, 4.5rem) 0;
+  border-bottom: 3px double var(--career-text);
+}
+
+.financeLedger {
+  counter-reset: ledger;
+}
+
+.financeRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2.5rem);
+  padding-block: clamp(1.5rem, 4vw, 2.75rem);
+  border-bottom: 1px solid var(--career-border);
+  counter-increment: ledger;
+}
+
+.financeRow::before {
+  color: var(--career-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .76rem;
+  font-weight: 700;
+  content: "0" counter(ledger);
+}
+
+.financeRow::after {
+  position: absolute;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  left: 3.3rem;
+  width: 1px;
+  background: var(--career-border);
+  content: "";
+}
+
+.financeRow > h2,
+.financeRow > div {
+  grid-column: 2;
+}
+
+.financeRow:focus-within,
+.financeRow:hover {
+  background: color-mix(in srgb, var(--career-accent) 4%, transparent);
+}
+
+.legal {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--career-text) 4%, transparent), transparent 12%, transparent 88%, color-mix(in srgb, var(--career-text) 4%, transparent)),
+    var(--career-background);
+}
+
+.legalDocument {
+  width: min(100% - 1.25rem, 68rem);
+  margin-inline: auto;
+  padding: clamp(1.5rem, 6vw, 5rem);
+  border-inline: 1px solid var(--career-border);
+  background: var(--career-surface);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--career-text) 9%, transparent);
+}
+
+.legalFolio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--career-text);
+}
+
+.legalHero {
+  padding-block: clamp(2.5rem, 8vw, 6rem);
+  border-bottom: 4px double var(--career-text);
+}
+
+.legalBody {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+  gap: clamp(1.25rem, 5vw, 4rem);
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+.legalRail {
+  align-self: start;
+  color: var(--career-muted);
+  font-family: var(--career-heading-font);
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: .9;
+}
+
+.legalRail small {
+  display: block;
+  margin-top: 1rem;
+  font-family: inherit;
+  font-size: .7rem;
+  letter-spacing: .14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.legalSections {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+.legalSection {
+  position: relative;
+  padding-bottom: clamp(2rem, 5vw, 4rem);
+  border-bottom: 1px solid var(--career-border);
+}
+
+.legalSection::before {
+  position: absolute;
+  top: 0;
+  left: -1.5rem;
+  width: .45rem;
+  height: .45rem;
+  border-radius: 50%;
+  background: var(--career-accent);
+  content: "";
+}
+
+.consulting::before {
+  opacity: .18;
+  background: linear-gradient(135deg, transparent 60%, var(--career-accent));
+}
+
+.consultingFrame {
+  width: min(100% - 1.5rem, 82rem);
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.consultingCover {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(12rem, .7fr);
+  overflow: hidden;
+  border: 1px solid var(--career-border);
+  border-radius: var(--career-radius);
+  background: var(--career-surface);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--career-text) 10%, transparent);
+}
+
+.consultingHero {
+  padding: clamp(2rem, 6vw, 5rem);
+}
+
+.consultingCoverMark {
+  display: grid;
+  place-items: end start;
+  min-height: 15rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  color: color-mix(in srgb, var(--career-surface) 92%, var(--career-text));
+  background: var(--career-accent);
+  font-family: var(--career-heading-font);
+  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-weight: 700;
+  line-height: .75;
+}
+
+.consultingDeck {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--career-section-gap);
+  margin-top: var(--career-section-gap);
+}
+
+.consultingSlide {
+  position: relative;
+  min-height: 15rem;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.consultingSlide:nth-child(3n + 1) {
+  grid-column: 1 / -1;
+}
+
+.consultingSlideNumber {
+  display: block;
+  margin-bottom: 1.5rem;
+  color: var(--career-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .7rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
 @keyframes studio-reveal {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
@@ -355,6 +577,15 @@
   .electricalSection:nth-child(4n + 4) {
     grid-column: span 6;
   }
+
+  .legalBody,
+  .consultingCover {
+    grid-template-columns: 1fr;
+  }
+
+  .legalRail {
+    display: none;
+  }
 }
 
 @media (max-width: 560px) {
@@ -372,6 +603,22 @@
   .electricalSection:nth-child(4n + 1),
   .electricalSection:nth-child(4n + 4) {
     grid-column: 1 / -1;
+  }
+
+  .financeRow {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .financeRow::after {
+    left: 1.8rem;
+  }
+
+  .consultingDeck {
+    grid-template-columns: 1fr;
+  }
+
+  .consultingSlide:nth-child(3n + 1) {
+    grid-column: auto;
   }
 }
 

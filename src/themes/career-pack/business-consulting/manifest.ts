@@ -3,9 +3,9 @@ import { defineCareerTheme } from "../types";
 export const businessConsultingManifest = defineCareerTheme({
   layoutKey: "career-business-consulting",
   name: "Executive Advisory",
-  description: "A clear executive-summary starter for consulting and business roles.",
+  description: "An executive presentation-style portfolio for strategy, case studies, and business storytelling.",
   category: "Business",
   careerTags: ["management consultant", "business analyst", "strategy", "operations"],
-  styleTags: ["executive", "structured", "outcome-focused"],
+  styleTags: ["executive deck", "strategy", "case study", "outcome-focused"],
   component: () => import("./BusinessConsultingTheme"),
 });

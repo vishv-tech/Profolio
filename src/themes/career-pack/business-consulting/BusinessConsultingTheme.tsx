@@ -1,37 +1,57 @@
+import type { CSSProperties } from "react";
+
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
   PortfolioHeader,
+  SECTION_LABELS,
   SectionRenderer,
   ThemeShell,
 } from "../shared";
+import styles from "../shared/career-studio.module.css";
 
-export default function BusinessConsultingTheme({ data, config }: ThemeComponentProps) {
+function revealStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
+}
+
+export default function BusinessConsultingTheme({
+  data,
+  config,
+}: ThemeComponentProps) {
   const sections = getVisibleThemeSections(data, config);
 
   return (
-    <ThemeShell config={config} layoutKey="career-business-consulting">
-      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
-        <PortfolioHeader
-          className="border-b pb-8 lg:grid lg:grid-cols-[1fr_auto] lg:items-end"
-          config={config}
-          data={data}
-        />
-        <main
-          className="mt-8 grid items-start md:grid-cols-2"
-          style={{ gap: "var(--career-section-gap)" }}
-        >
-          {sections.map((sectionKey) => (
-            <SectionRenderer
-              className={`border-t-4 py-5 ${
-                sectionKey === "summary" || sectionKey === "experience"
-                  ? "md:col-span-2"
-                  : ""
-              }`}
-              data={data}
+    <ThemeShell
+      className={`${styles.root} ${styles.consulting}`}
+      config={config}
+      layoutKey="career-business-consulting"
+    >
+      <div className={styles.consultingFrame}>
+        <section className={styles.consultingCover} data-reveal style={revealStyle(0)}>
+          <PortfolioHeader
+            className={styles.consultingHero}
+            config={config}
+            data={data}
+            imageClassName="rounded-[var(--career-radius)]"
+          />
+          <div className={styles.consultingCoverMark} aria-hidden="true">
+            /01
+          </div>
+        </section>
+
+        <main className={styles.consultingDeck}>
+          {sections.map((sectionKey, index) => (
+            <section
+              className={`${styles.sectionCard} ${styles.consultingSlide}`}
+              data-reveal
               key={sectionKey}
-              sectionKey={sectionKey}
-            />
+              style={revealStyle(index + 1)}
+            >
+              <span className={styles.consultingSlideNumber}>
+                {String(index + 2).padStart(2, "0")} / {SECTION_LABELS[sectionKey]}
+              </span>
+              <SectionRenderer data={data} sectionKey={sectionKey} />
+            </section>
           ))}
         </main>
       </div>

@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
@@ -5,30 +7,55 @@ import {
   SectionRenderer,
   ThemeShell,
 } from "../shared";
+import styles from "../shared/career-studio.module.css";
 
-export default function LegalProfessionalTheme({ data, config }: ThemeComponentProps) {
+function revealStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
+}
+
+export default function LegalProfessionalTheme({
+  data,
+  config,
+}: ThemeComponentProps) {
   const sections = getVisibleThemeSections(data, config);
 
   return (
-    <ThemeShell config={config} layoutKey="career-legal-professional">
-      <div className="mx-auto max-w-3xl px-5 py-14 sm:px-10 sm:py-20">
+    <ThemeShell
+      className={`${styles.root} ${styles.legal}`}
+      config={config}
+      layoutKey="career-legal-professional"
+    >
+      <article className={styles.legalDocument}>
+        <div className={styles.legalFolio}>
+          <span className={styles.microLabel}>Professional brief</span>
+          <span className={styles.microLabel}>Public portfolio record</span>
+        </div>
+
         <PortfolioHeader
-          className="border-y py-10"
+          className={styles.legalHero}
           config={config}
           data={data}
           textAlign="center"
         />
-        <main className="mt-10 space-y-10">
-          {sections.map((sectionKey) => (
-            <SectionRenderer
-              className="border-b pb-10 [&_p]:max-w-prose"
-              data={data}
-              key={sectionKey}
-              sectionKey={sectionKey}
-            />
-          ))}
-        </main>
-      </div>
+
+        <div className={styles.legalBody}>
+          <aside className={styles.legalRail} aria-hidden="true">
+            §
+            <small>Experience · credentials · selected matters</small>
+          </aside>
+          <main className={styles.legalSections}>
+            {sections.map((sectionKey, index) => (
+              <div data-reveal key={sectionKey} style={revealStyle(index + 1)}>
+                <SectionRenderer
+                  className={styles.legalSection}
+                  data={data}
+                  sectionKey={sectionKey}
+                />
+              </div>
+            ))}
+          </main>
+        </div>
+      </article>
     </ThemeShell>
   );
 }
