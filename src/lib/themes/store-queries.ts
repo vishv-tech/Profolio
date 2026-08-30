@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { PortfolioIdSchema } from "@/lib/portfolios/contracts";
 import { logPortfolioDatabaseError } from "@/lib/portfolios/database-errors";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   ThemeDatabaseMetadataSchema,
@@ -49,18 +50,12 @@ export async function getOwnedThemeStorePortfolio(
   }
 
   const supabase = await createClient();
-  const [portfolioResult, themesResult] = await Promise.all([
-    supabase
-      .from("portfolios")
-      .select("id, title, draft_content, theme_id, theme_config")
-      .eq("id", parsedId.data)
-      .eq("user_id", userId)
-      .maybeSingle(),
-    supabase
-      .from("themes")
-      .select("id, layout_key, default_config, preview_image_url")
-      .eq("is_active", true),
-  ]);
+  const portfolioResult = await supabase
+    .from("portfolios")
+    .select("id, title, draft_content, theme_id, theme_config")
+    .eq("id", parsedId.data)
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (portfolioResult.error || !portfolioResult.data) {
     logPortfolioDatabaseError(
@@ -87,15 +82,33 @@ export async function getOwnedThemeStorePortfolio(
     return { status: "invalid-draft" };
   }
 
-  if (themesResult.error) {
-    logPortfolioDatabaseError(
-      "theme-store-metadata",
-      themesResult.error,
-      parsedId.data,
-    );
+  // Inactive rows are hidden by public RLS, but they still matter when detecting
+  // duplicate layout keys. This privileged read happens only after ownership was
+  // established with the user's RLS-scoped client and returns public metadata.
+  let themeRows: unknown[] = [];
+  let metadataReadFailed = false;
+
+  try {
+    const themesResult = await createAdminClient()
+      .from("themes")
+      .select("id, layout_key, default_config, preview_image_url, is_active");
+
+    if (themesResult.error) {
+      metadataReadFailed = true;
+      logPortfolioDatabaseError(
+        "theme-store-metadata",
+        themesResult.error,
+        parsedId.data,
+      );
+    } else {
+      themeRows = themesResult.data ?? [];
+    }
+  } catch (error) {
+    metadataReadFailed = true;
+    logPortfolioDatabaseError("theme-store-metadata", error, parsedId.data);
   }
 
-  const databaseThemes = (themesResult.data ?? []).flatMap((row) => {
+  const databaseThemes = themeRows.flatMap((row) => {
     const parsed = ThemeDatabaseMetadataSchema.safeParse(row);
     return parsed.success ? [parsed.data] : [];
   });
@@ -110,6 +123,6 @@ export async function getOwnedThemeStorePortfolio(
       themeConfig: portfolioRow.data.theme_config,
     },
     databaseThemes,
-    metadataReadFailed: Boolean(themesResult.error),
+    metadataReadFailed,
   };
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ThemeConfigSchema } from "@/lib/validation/theme";
 import { allThemePack, allThemeRegistry } from "@/themes/registry";
 import { resolveThemeConfig } from "@/themes/default-config";
 import type { ThemeConfig } from "@/types/theme";
@@ -7,8 +8,9 @@ import type { ThemeConfig } from "@/types/theme";
 export const ThemeDatabaseMetadataSchema = z.strictObject({
   id: z.string().uuid(),
   layout_key: z.string().min(1).max(100),
-  default_config: z.unknown(),
+  default_config: ThemeConfigSchema,
   preview_image_url: z.string().nullable(),
+  is_active: z.boolean(),
 });
 
 export type ThemeDatabaseMetadata = z.infer<
@@ -99,7 +101,7 @@ export function buildThemeStoreCatalog({
         useSavedConfig ? savedThemeConfig : databaseTheme?.default_config,
       ),
       databaseThemeId: databaseTheme?.id ?? null,
-      canPersist: Boolean(databaseTheme),
+      canPersist: Boolean(databaseTheme?.is_active),
     };
   });
 }

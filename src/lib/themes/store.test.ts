@@ -23,12 +23,31 @@ test("builds the production catalog from every unified registry manifest", () =>
   assert.ok(catalog.every((entry) => !entry.canPersist));
 });
 
+test("marks every coded theme ready after canonical metadata synchronization", () => {
+  const databaseThemes = allThemePack.map((manifest) => ({
+    id: crypto.randomUUID(),
+    layout_key: manifest.layoutKey,
+    default_config: defaultThemeConfig,
+    preview_image_url: null,
+    is_active: true,
+  }));
+  const catalog = buildThemeStoreCatalog({
+    databaseThemes,
+    savedThemeConfig: {},
+    savedThemeId: null,
+  });
+
+  assert.equal(catalog.length, 35);
+  assert.equal(catalog.filter((entry) => entry.canPersist).length, 35);
+});
+
 test("only marks a unique matching database theme as persistable", () => {
   const metadata = {
     id: crypto.randomUUID(),
     layout_key: "pavni-professional-editorial",
     default_config: defaultThemeConfig,
     preview_image_url: "javascript:alert(1)",
+    is_active: true,
   };
   const catalog = buildThemeStoreCatalog({
     databaseThemes: [metadata],
@@ -55,6 +74,17 @@ test("only marks a unique matching database theme as persistable", () => {
 
   assert.equal(
     duplicateCatalog.find((entry) => entry.layoutKey === metadata.layout_key)
+      ?.canPersist,
+    false,
+  );
+
+  const inactiveCatalog = buildThemeStoreCatalog({
+    databaseThemes: [{ ...metadata, is_active: false }],
+    savedThemeConfig: {},
+    savedThemeId: null,
+  });
+  assert.equal(
+    inactiveCatalog.find((entry) => entry.layoutKey === metadata.layout_key)
       ?.canPersist,
     false,
   );

@@ -3,6 +3,11 @@ import "server-only";
 import { pagination, safeSearch } from "@/lib/admin/pagination";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  buildCodedThemeRegistryEntries,
+  type CodedThemeRegistryEntry,
+  type ThemeMetadataRow,
+} from "@/lib/themes/metadata";
 import { ThemeConfigSchema } from "@/lib/validation/theme";
 import type { Tables } from "@/types/database";
 import type {
@@ -412,6 +417,49 @@ export async function getAdminThemeStats() {
     totalThemes: totalThemes.count ?? 0,
     activeThemes: activeThemes.count ?? 0,
     portfoliosUsingThemes: portfoliosUsingThemes.count ?? 0,
+  };
+}
+
+export type AdminThemeRegistryData = {
+  entries: CodedThemeRegistryEntry[];
+  databaseMetadataCount: number;
+  readyToSaveCount: number;
+  missingCount: number;
+  duplicateCount: number;
+  invalidCount: number;
+  uninstalledRows: ThemeMetadataRow[];
+};
+
+export async function getAdminThemeRegistry(): Promise<AdminThemeRegistryData> {
+  await requireAdmin();
+  const { data, error } = await createAdminClient()
+    .from("themes")
+    .select(
+      "id, name, slug, description, layout_key, preview_image_url, default_config, is_active, created_at, updated_at",
+    )
+    .order("layout_key");
+
+  if (error) {
+    throw new Error("Unable to load the coded theme registry.");
+  }
+
+  const rows = (data ?? []) as ThemeMetadataRow[];
+  const entries = buildCodedThemeRegistryEntries(rows);
+
+  return {
+    entries,
+    databaseMetadataCount: rows.length,
+    readyToSaveCount: entries.filter((entry) => entry.canPersist).length,
+    missingCount: entries.filter((entry) => entry.metadataState === "missing")
+      .length,
+    duplicateCount: entries.filter(
+      (entry) => entry.metadataState === "duplicate",
+    ).length,
+    invalidCount: entries.filter((entry) => entry.metadataState === "invalid")
+      .length,
+    uninstalledRows: rows.filter(
+      (row) => !entries.some((entry) => entry.layoutKey === row.layout_key),
+    ),
   };
 }
 

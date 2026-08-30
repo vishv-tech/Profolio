@@ -17,6 +17,11 @@ import {
 } from "@/lib/admin/validation";
 import { toDatabaseJson } from "@/lib/resumes/json";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  planCodedThemeMetadataSync,
+  type ThemeMetadataRow,
+} from "@/lib/themes/metadata";
+import { getThemeManifest } from "@/themes/registry";
 import type { AccountStatus, UserRole } from "@/types/admin";
 
 const SAFE_ERRORS = [
@@ -28,6 +33,9 @@ const SAFE_ERRORS = [
   "Unsupported theme layout.",
   "Only HTTPS preview URLs are allowed.",
   "The selected account no longer exists.",
+  "Theme metadata already exists for this layout.",
+  "Duplicate theme metadata must be resolved before this action.",
+  "Only installed coded themes can be managed.",
 ] as const;
 
 function finish(
@@ -177,7 +185,18 @@ export async function createTheme(formData: FormData): Promise<never> {
 
   try {
     const input = parseThemeForm(formData);
-    const { error } = await createAdminClient()
+    const client = createAdminClient();
+    const { count, error: duplicateError } = await client
+      .from("themes")
+      .select("id", { count: "exact", head: true })
+      .eq("layout_key", input.layoutKey);
+
+    if (duplicateError) throw new Error("Unable to verify theme metadata.");
+    if ((count ?? 0) > 0) {
+      throw new Error("Theme metadata already exists for this layout.");
+    }
+
+    const { error } = await client
       .from("themes")
       .insert(themeRecord(input));
 
@@ -198,7 +217,21 @@ export async function updateTheme(formData: FormData): Promise<never> {
     const input = parseThemeForm(formData);
     if (!input.id) throw new Error("Invalid theme.");
 
-    const { data, error } = await createAdminClient()
+    const client = createAdminClient();
+    const { data: matchingRows, error: duplicateError } = await client
+      .from("themes")
+      .select("id")
+      .eq("layout_key", input.layoutKey);
+
+    if (duplicateError) throw new Error("Unable to verify theme metadata.");
+    if (
+      matchingRows.length > 1 ||
+      (matchingRows.length === 1 && matchingRows[0].id !== input.id)
+    ) {
+      throw new Error("Theme metadata already exists for this layout.");
+    }
+
+    const { data, error } = await client
       .from("themes")
       .update(themeRecord(input))
       .eq("id", input.id)
@@ -224,7 +257,28 @@ export async function setThemeActive(formData: FormData): Promise<never> {
       .enum(["true", "false"])
       .transform((value) => value === "true")
       .parse(formData.get("isActive"));
-    const { data, error } = await createAdminClient()
+    const client = createAdminClient();
+    const { data: selected, error: selectedError } = await client
+      .from("themes")
+      .select("id, layout_key")
+      .eq("id", themeId)
+      .maybeSingle();
+
+    if (selectedError || !selected || !getThemeManifest(selected.layout_key)) {
+      throw new Error("Only installed coded themes can be managed.");
+    }
+
+    const { count, error: duplicateError } = await client
+      .from("themes")
+      .select("id", { count: "exact", head: true })
+      .eq("layout_key", selected.layout_key);
+
+    if (duplicateError) throw new Error("Unable to verify theme metadata.");
+    if (count !== 1) {
+      throw new Error("Duplicate theme metadata must be resolved before this action.");
+    }
+
+    const { data, error } = await client
       .from("themes")
       .update({ is_active: isActive })
       .eq("id", themeId)
@@ -247,7 +301,12 @@ export async function deleteTheme(formData: FormData): Promise<never> {
   try {
     const { themeId } = themeIdSchema.parse({ themeId: formData.get("themeId") });
     const client = createAdminClient();
-    const [portfolios, deployments] = await Promise.all([
+    const [selected, portfolios, deployments] = await Promise.all([
+      client
+        .from("themes")
+        .select("id, layout_key")
+        .eq("id", themeId)
+        .maybeSingle(),
       client
         .from("portfolios")
         .select("id", { count: "exact", head: true })
@@ -258,6 +317,13 @@ export async function deleteTheme(formData: FormData): Promise<never> {
         .eq("theme_id", themeId),
     ]);
 
+    if (
+      selected.error ||
+      !selected.data ||
+      !getThemeManifest(selected.data.layout_key)
+    ) {
+      throw new Error("Only installed coded themes can be managed.");
+    }
     if (portfolios.error || deployments.error) {
       throw new Error("Unable to verify theme usage.");
     }
@@ -280,4 +346,68 @@ export async function deleteTheme(formData: FormData): Promise<never> {
   revalidatePath("/admin/themes");
   revalidatePath("/themes");
   finish("/admin/themes", "success", "Theme deleted.");
+}
+
+export async function syncCodedThemes(): Promise<never> {
+  await requireAdmin();
+
+  let created = 0;
+  let updated = 0;
+  let unchanged = 0;
+  let issues = 0;
+
+  try {
+    const client = createAdminClient();
+    const { data, error } = await client
+      .from("themes")
+      .select(
+        "id, name, slug, description, layout_key, preview_image_url, default_config, is_active, created_at, updated_at",
+      );
+
+    if (error) throw new Error("Unable to load theme metadata.");
+
+    const plan = planCodedThemeMetadataSync((data ?? []) as ThemeMetadataRow[]);
+    unchanged = plan.unchanged.length;
+    issues = plan.issues.length;
+
+    for (const operation of plan.operations) {
+      if (operation.kind === "insert") {
+        const { error: insertError } = await client.from("themes").insert({
+          ...operation.record,
+          default_config: toDatabaseJson(operation.record.default_config),
+        });
+
+        if (insertError) throw new Error("Unable to synchronize theme metadata.");
+        created += 1;
+      } else {
+        const { data: synchronized, error: updateError } = await client
+          .from("themes")
+          .update({
+            ...operation.record,
+            default_config: toDatabaseJson(operation.record.default_config),
+          })
+          .eq("id", operation.id)
+          .eq("layout_key", operation.layoutKey)
+          .select("id")
+          .single();
+
+        if (updateError || !synchronized) {
+          throw new Error("Unable to synchronize theme metadata.");
+        }
+        updated += 1;
+      }
+    }
+  } catch (error) {
+    finish("/admin/themes", "error", safeFailure(error));
+  }
+
+  revalidatePath("/admin/themes");
+  revalidatePath("/themes");
+  finish(
+    "/admin/themes",
+    "success",
+    `Theme sync complete: ${created} created, ${updated} updated, ${unchanged} unchanged${
+      issues ? `, ${issues} require review` : ""
+    }.`,
+  );
 }

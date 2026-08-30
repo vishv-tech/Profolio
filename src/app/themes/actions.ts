@@ -6,7 +6,9 @@ import { requireActiveUser } from "@/lib/auth/guards";
 import { PortfolioIdSchema } from "@/lib/portfolios/contracts";
 import { logPortfolioDatabaseError } from "@/lib/portfolios/database-errors";
 import { toDatabaseJson } from "@/lib/resumes/json";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isUniqueActiveCodedTheme } from "@/lib/themes/metadata";
 import { ThemeDatabaseMetadataSchema } from "@/lib/themes/store";
 import { ThemeConfigSchema } from "@/lib/validation/theme";
 import { resolveThemeConfig } from "@/themes/default-config";
@@ -53,19 +55,22 @@ export async function selectPortfolioTheme(
     return { success: false, message: "That portfolio is unavailable." };
   }
 
-  const { data: matchingThemes, error: themeError } = await supabase
+  const { data: matchingThemes, error: themeError } = await createAdminClient()
     .from("themes")
-    .select("id, layout_key, default_config, preview_image_url")
-    .eq("layout_key", manifest.layoutKey)
-    .eq("is_active", true)
-    .limit(2);
+    .select("id, layout_key, default_config, preview_image_url, is_active")
+    .eq("layout_key", manifest.layoutKey);
 
-  const parsedTheme =
-    matchingThemes?.length === 1
-      ? ThemeDatabaseMetadataSchema.safeParse(matchingThemes[0])
-      : null;
+  const parsedThemes = (matchingThemes ?? []).flatMap((theme) => {
+    const parsed = ThemeDatabaseMetadataSchema.safeParse(theme);
+    return parsed.success ? [parsed.data] : [];
+  });
+  const parsedTheme = parsedThemes[0];
 
-  if (themeError || !parsedTheme?.success) {
+  if (
+    themeError ||
+    parsedThemes.length !== (matchingThemes?.length ?? 0) ||
+    !isUniqueActiveCodedTheme(parsedThemes, manifest.layoutKey)
+  ) {
     logPortfolioDatabaseError(
       "theme-selection-metadata",
       themeError,
@@ -80,13 +85,13 @@ export async function selectPortfolioTheme(
 
   const savedConfig = ThemeConfigSchema.safeParse(portfolio.theme_config);
   const themeConfig =
-    portfolio.theme_id === parsedTheme.data.id && savedConfig.success
+    portfolio.theme_id === parsedTheme.id && savedConfig.success
       ? savedConfig.data
-      : resolveThemeConfig(parsedTheme.data.default_config);
+      : resolveThemeConfig(parsedTheme.default_config);
   const { data: updatedPortfolio, error: updateError } = await supabase
     .from("portfolios")
     .update({
-      theme_id: parsedTheme.data.id,
+      theme_id: parsedTheme.id,
       theme_config: toDatabaseJson(themeConfig),
     })
     .eq("id", parsedPortfolioId.data)

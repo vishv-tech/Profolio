@@ -1134,6 +1134,87 @@
   color: #bd2933;
 }
 
+.admin-theme-registry-card__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.admin-theme-registry-card__eyebrow span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #425674;
+  background: #eef3f9;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.admin-theme-registry-card__warning,
+.admin-theme-registry-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 11px;
+  border: 1px solid #f2d59a;
+  border-radius: 7px;
+  color: #7b4a00;
+  background: #fff8e9;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.admin-theme-registry-card__warning svg,
+.admin-theme-registry-summary svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.admin-theme-registry-card__warning p,
+.admin-theme-registry-card__warning strong,
+.admin-theme-registry-summary p {
+  margin: 0;
+}
+
+.admin-theme-registry-summary {
+  margin: 14px 18px 0;
+}
+
+.admin-theme-registry-summary.is-error {
+  border-color: #efb4b8;
+  color: #8c2028;
+  background: #fff1f2;
+}
+
+.admin-theme-registry-card__duplicates {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.admin-theme-registry-card__duplicates > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #e4eaf2;
+  border-radius: 6px;
+  color: #52627d;
+  font-size: 9px;
+}
+
+.admin-theme-registry-card__duplicates button {
+  border: 0;
+  color: #bd2933;
+  background: transparent;
+  font-size: 9px;
+  cursor: pointer;
+}
+
 .admin-detail {
   margin: 16px 18px 0;
   overflow: hidden;

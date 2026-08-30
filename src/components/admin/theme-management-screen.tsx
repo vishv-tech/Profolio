@@ -1,169 +1,255 @@
-import { CheckCircle2, FolderCheck, Palette, Plus } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Code2,
+  Database,
+  FolderSync,
+  Palette,
+  Power,
+} from "lucide-react";
 import Link from "next/link";
 
 import {
-  EmptyState,
-  formatNumber,
   Notice,
   PageHeading,
-  Pagination,
   StatCard,
   StatusBadge,
 } from "@/components/admin/admin-primitives";
 import { ConfirmActionButton } from "@/components/admin/confirm-action-button";
 import {
-  createTheme,
   deleteTheme,
   setThemeActive,
-  updateTheme,
+  syncCodedThemes,
 } from "@/lib/admin/actions";
-import type { AdminTheme, PageResult } from "@/types/admin";
-import type { ThemeConfig } from "@/types/theme";
+import type { AdminThemeRegistryData } from "@/lib/admin/queries";
+import type { CodedThemeRegistryEntry } from "@/lib/themes/metadata";
 
 type ThemeQuery = {
   search: string;
   status: "all" | "active" | "inactive";
-  order: "updated" | "newest" | "name";
+  order: "registry" | "name";
 };
 
-const NEW_THEME_CONFIG: ThemeConfig = {
-  appearance: {
-    colorMode: "light",
-    backgroundColor: "#ffffff",
-    surfaceColor: "#f8fafc",
-    textColor: "#0f172a",
-    mutedTextColor: "#64748b",
-    accentColor: "#2563eb",
-    borderColor: "#e2e8f0",
-    fontFamily: "Geist",
-    headingFontFamily: "Geist",
-    borderRadius: 12,
-    spacing: "comfortable",
-    animationIntensity: "subtle",
-  },
-  sections: {
-    order: [
-      "summary",
-      "experience",
-      "education",
-      "projects",
-      "skills",
-      "achievements",
-      "certifications",
-      "languages",
-      "interests",
-      "customSections",
-    ],
-    hidden: [],
-  },
-  visibility: {
-    showProfileImage: true,
-    showEmail: true,
-    showPhone: true,
-    showLocation: true,
-    showLinks: true,
-  },
-};
+const STATE_LABELS = {
+  missing: "Missing metadata",
+  duplicate: "Duplicate / error",
+  invalid: "Invalid config",
+  ready: "Metadata ready",
+} as const;
 
-function listHref(query: ThemeQuery, page: number): string {
-  const params = new URLSearchParams({ status: query.status, order: query.order });
-  if (page > 1) params.set("page", String(page));
-  if (query.search) params.set("search", query.search);
-  return `/admin/themes?${params}`;
-}
-
-function editorHref(query: ThemeQuery, key: "new" | "edit", value: string): string {
-  const url = new URL(listHref(query, 1), "https://admin.invalid");
-  url.searchParams.set(key, value);
-  return `${url.pathname}?${url.searchParams}`;
-}
-
-function ThemeEditor({
-  theme,
-  layoutKeys,
-  closeHref,
-}: {
-  theme?: AdminTheme;
-  layoutKeys: string[];
-  closeHref: string;
-}) {
-  const keys = [...new Set(theme ? [theme.layout_key, ...layoutKeys] : layoutKeys)];
-  const config = theme?.default_config ?? NEW_THEME_CONFIG;
+function ThemeRegistryCard({ entry }: { entry: CodedThemeRegistryEntry }) {
+  const uniqueRow = entry.databaseRows.length === 1 ? entry.databaseRows[0] : null;
+  const stateTone =
+    entry.metadataState === "ready"
+      ? entry.canPersist
+        ? "active"
+        : "inactive"
+      : "failed";
 
   return (
-    <section className="admin-card admin-editor">
-      <header>
-        <div>
-          <h2>{theme ? "Edit theme" : "Add theme metadata"}</h2>
-          <p>Layouts come from the code registry; the database stores metadata and frozen ThemeConfig only.</p>
-        </div>
-        <Link href={closeHref}>Close</Link>
-      </header>
-      <form action={theme ? updateTheme : createTheme}>
-        {theme ? <input name="id" type="hidden" value={theme.id} /> : null}
-        <label>Name<input name="name" required minLength={2} maxLength={80} defaultValue={theme?.name} /></label>
-        <label>Slug<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={100} defaultValue={theme?.slug} /></label>
-        <label>Layout<select name="layoutKey" required defaultValue={theme?.layout_key ?? keys[0]}>{keys.map((key) => <option key={key} value={key}>{key}</option>)}</select></label>
-        <label>Preview image URL<input name="previewImageUrl" type="url" defaultValue={theme?.preview_image_url ?? ""} placeholder="https://..." /></label>
-        <label className="admin-editor__wide">Description<textarea name="description" maxLength={500} defaultValue={theme?.description ?? ""} /></label>
-        <label className="admin-editor__wide">ThemeConfig JSON<textarea name="defaultConfig" required defaultValue={JSON.stringify(config, null, 2)} spellCheck={false} /></label>
-        <label className="admin-editor__check"><input name="isActive" type="checkbox" defaultChecked={theme?.is_active ?? true} /> Available for selection</label>
-        <div className="admin-editor__actions">
-          <Link className="admin-button admin-button--secondary" href={closeHref}>Cancel</Link>
-          <ConfirmActionButton className="admin-button admin-button--primary" type="submit" confirmation={theme ? "Save these changes? Existing portfolio metadata may reference this theme." : "Create this theme metadata record?"}>Save theme</ConfirmActionButton>
-        </div>
-      </form>
-    </section>
+    <article className="admin-theme-card admin-theme-registry-card">
+      <div className="admin-theme-card__body">
+        <header>
+          <div>
+            <div className="admin-theme-registry-card__eyebrow">
+              <span>{entry.category}</span>
+              <span>Installed in code</span>
+            </div>
+            <h3>{entry.name}</h3>
+            <p>{entry.description}</p>
+          </div>
+          <StatusBadge value={stateTone} />
+        </header>
+
+        <dl>
+          <div>
+            <dt>Layout key</dt>
+            <dd>{entry.layoutKey}</dd>
+          </div>
+          <div>
+            <dt>Database</dt>
+            <dd>{STATE_LABELS[entry.metadataState]}</dd>
+          </div>
+          <div>
+            <dt>Production</dt>
+            <dd>{entry.canPersist ? "Ready to save" : "Preview only"}</dd>
+          </div>
+        </dl>
+
+        {entry.metadataState === "duplicate" ? (
+          <div className="admin-theme-registry-card__warning">
+            <AlertTriangle aria-hidden="true" />
+            <div>
+              <strong>{entry.databaseRows.length} rows use this layout key.</strong>
+              <p>Saving and publishing stay blocked until exactly one row remains.</p>
+            </div>
+          </div>
+        ) : entry.metadataState === "invalid" ? (
+          <div className="admin-theme-registry-card__warning">
+            <AlertTriangle aria-hidden="true" />
+            <p>Run coded-theme sync to restore the canonical ThemeConfig.</p>
+          </div>
+        ) : entry.metadataState === "missing" ? (
+          <div className="admin-theme-registry-card__warning">
+            <Database aria-hidden="true" />
+            <p>No database metadata row exists yet. Run coded-theme sync.</p>
+          </div>
+        ) : null}
+
+        {uniqueRow && entry.metadataState === "ready" ? (
+          <div className="admin-theme-card__actions">
+            <form action={setThemeActive}>
+              <input name="themeId" type="hidden" value={uniqueRow.id} />
+              <input
+                name="isActive"
+                type="hidden"
+                value={String(!uniqueRow.is_active)}
+              />
+              <ConfirmActionButton
+                type="submit"
+                confirmation={`${uniqueRow.is_active ? "Deactivate" : "Activate"} ${entry.name}?`}
+              >
+                <Power aria-hidden="true" />
+                {uniqueRow.is_active ? "Deactivate" : "Activate"}
+              </ConfirmActionButton>
+            </form>
+          </div>
+        ) : null}
+
+        {entry.metadataState === "duplicate" ? (
+          <div className="admin-theme-registry-card__duplicates">
+            {entry.databaseRows.map((row) => (
+              <div key={row.id}>
+                <span>
+                  {row.name} · {row.is_active ? "active" : "inactive"} · {row.id.slice(0, 8)}
+                </span>
+                <form action={deleteTheme}>
+                  <input name="themeId" type="hidden" value={row.id} />
+                  <ConfirmActionButton
+                    className="is-danger"
+                    type="submit"
+                    confirmation={`Delete duplicate metadata row ${row.id}? Referenced rows cannot be deleted.`}
+                  >
+                    Delete duplicate
+                  </ConfirmActionButton>
+                </form>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
-function ThemeCard({ theme, query }: { theme: AdminTheme; query: ThemeQuery }) {
-  return <article className="admin-theme-card">
-    <div className="admin-theme-card__preview">
-      {theme.preview_image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element -- administrator-provided remote hosts cannot be statically allow-listed
-        <img src={theme.preview_image_url} alt={`${theme.name} preview`} />
-      ) : (
-        <span><Palette aria-hidden="true" />Preview not added</span>
-      )}
-    </div>
-    <div className="admin-theme-card__body">
-      <header><div><h3>{theme.name}</h3><p>{theme.description || "No description added."}</p></div><StatusBadge value={theme.is_active ? "active" : "inactive"} /></header>
-      <dl><div><dt>Slug</dt><dd>{theme.slug}</dd></div><div><dt>Layout</dt><dd>{theme.layout_key}</dd></div><div><dt>Usage</dt><dd>{formatNumber(theme.portfolioCount)} portfolios</dd></div></dl>
-      {!theme.default_config ? <p className="admin-theme-card__warning">Stored configuration does not match the frozen ThemeConfig contract.</p> : null}
-      <div className="admin-theme-card__actions">
-        <Link className="admin-button admin-button--secondary" href={editorHref(query, "edit", theme.id)}>Edit</Link>
-        <form action={setThemeActive}><input name="themeId" type="hidden" value={theme.id} /><input name="isActive" type="hidden" value={String(!theme.is_active)} /><ConfirmActionButton type="submit" confirmation={`${theme.is_active ? "Deactivate" : "Activate"} ${theme.name}?`}>{theme.is_active ? "Deactivate" : "Activate"}</ConfirmActionButton></form>
-        <form action={deleteTheme}><input name="themeId" type="hidden" value={theme.id} /><ConfirmActionButton className="is-danger" type="submit" confirmation={`Permanently delete ${theme.name}? This is allowed only when no portfolio or deployment references it.`}>Delete</ConfirmActionButton></form>
-      </div>
-    </div>
-  </article>;
-}
-
 export function ThemeManagementScreen({
-  themes,
-  stats,
+  registry,
   query,
-  layoutKeys,
-  editor,
   message,
 }: {
-  themes: PageResult<AdminTheme>;
-  stats: { totalThemes: number; activeThemes: number; portfoliosUsingThemes: number };
+  registry: AdminThemeRegistryData;
   query: ThemeQuery;
-  layoutKeys: string[];
-  editor?: { mode: "new" } | { mode: "edit"; theme: AdminTheme };
   message?: { kind: "success" | "error"; text: string };
 }) {
-  return <div className="admin-page">
-    <PageHeading title="Theme management" description="Manage database metadata for layouts that exist in the compiled theme registry." actions={<Link className="admin-button admin-button--primary" href={editorHref(query, "new", "1")}><Plus aria-hidden="true" /> Add theme</Link>} />
-    <div className="admin-stats admin-stats--three"><StatCard icon={Palette} label="Total themes" value={stats.totalThemes} tone="purple" /><StatCard icon={CheckCircle2} label="Active themes" value={stats.activeThemes} tone="green" /><StatCard icon={FolderCheck} label="Portfolios using themes" value={stats.portfoliosUsingThemes} /></div>
-    {editor ? <ThemeEditor theme={editor.mode === "edit" ? editor.theme : undefined} layoutKeys={layoutKeys} closeHref={listHref(query, themes.page)} /> : null}
-    <section className="admin-card admin-manager">
-      <div className="admin-manager__filters"><form action="/admin/themes" className="admin-filter-form"><input name="search" type="search" defaultValue={query.search} placeholder="Search themes" aria-label="Search themes" /><select name="status" defaultValue={query.status}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select><select name="order" defaultValue={query.order}><option value="updated">Recently updated</option><option value="newest">Newest</option><option value="name">Name</option></select><button className="admin-button admin-button--primary" type="submit">Apply</button></form><Link href="/admin/themes">Clear filters</Link></div>
-      <Notice message={message} />
-      {themes.items.length ? <div className="admin-theme-grid">{themes.items.map((theme) => <ThemeCard key={theme.id} theme={theme} query={query} />)}</div> : <EmptyState icon={Palette} title="No themes found" description="Add metadata for a registered layout when you are ready." />}
-      <Pagination result={themes} hrefForPage={(page) => listHref(query, page)} label="themes" />
-    </section>
-  </div>;
+  const normalizedSearch = query.search.trim().toLocaleLowerCase();
+  const entries = registry.entries
+    .filter((entry) => {
+      if (query.status === "active" && !entry.isActive) return false;
+      if (query.status === "inactive" && entry.isActive) return false;
+      if (!normalizedSearch) return true;
+      return `${entry.name} ${entry.layoutKey} ${entry.category}`
+        .toLocaleLowerCase()
+        .includes(normalizedSearch);
+    })
+    .sort((left, right) =>
+      query.order === "name" ? left.name.localeCompare(right.name) : 0,
+    );
+
+  return (
+    <div className="admin-page">
+      <PageHeading
+        title="Coded theme registry"
+        description="Application manifests define installed themes. Supabase stores synchronized metadata and availability only."
+        actions={
+          <form action={syncCodedThemes}>
+            <ConfirmActionButton
+              className="admin-button admin-button--primary"
+              type="submit"
+              confirmation="Synchronize all coded theme manifests with database metadata? Existing active/inactive choices are preserved."
+            >
+              <FolderSync aria-hidden="true" />
+              Sync coded themes
+            </ConfirmActionButton>
+          </form>
+        }
+      />
+
+      <div className="admin-stats admin-stats--three">
+        <StatCard icon={Code2} label="Installed in code" value={registry.entries.length} tone="purple" />
+        <StatCard icon={CheckCircle2} label="Ready to save" value={registry.readyToSaveCount} tone="green" />
+        <StatCard icon={Database} label="Database rows" value={registry.databaseMetadataCount} />
+      </div>
+
+      <section className="admin-card admin-manager">
+        <div className="admin-manager__filters">
+          <form action="/admin/themes" className="admin-filter-form">
+            <input
+              name="search"
+              type="search"
+              defaultValue={query.search}
+              placeholder="Search coded themes"
+              aria-label="Search coded themes"
+            />
+            <select name="status" defaultValue={query.status}>
+              <option value="all">All availability</option>
+              <option value="active">Active metadata</option>
+              <option value="inactive">Inactive or missing</option>
+            </select>
+            <select name="order" defaultValue={query.order}>
+              <option value="registry">Registry order</option>
+              <option value="name">Name</option>
+            </select>
+            <button className="admin-button admin-button--primary" type="submit">
+              Apply
+            </button>
+          </form>
+          <Link href="/admin/themes">Clear filters</Link>
+        </div>
+
+        <Notice message={message} />
+
+        {registry.missingCount || registry.duplicateCount || registry.invalidCount ? (
+          <div className="admin-theme-registry-summary">
+            <AlertTriangle aria-hidden="true" />
+            <p>
+              {registry.missingCount} missing · {registry.duplicateCount} duplicate · {registry.invalidCount} invalid. Only unique, active rows with canonical ThemeConfig are available in production.
+            </p>
+          </div>
+        ) : null}
+
+        {registry.uninstalledRows.length ? (
+          <div className="admin-theme-registry-summary is-error">
+            <AlertTriangle aria-hidden="true" />
+            <p>
+              {registry.uninstalledRows.length} database row(s) reference layout keys that are not installed in code. They are never synchronized or selectable.
+            </p>
+          </div>
+        ) : null}
+
+        <div className="admin-theme-grid">
+          {entries.map((entry) => (
+            <ThemeRegistryCard entry={entry} key={entry.layoutKey} />
+          ))}
+        </div>
+
+        {!entries.length ? (
+          <div className="admin-empty">
+            <span><Palette aria-hidden="true" /></span>
+            <h2>No coded themes match these filters</h2>
+            <p>Clear the filters to return to the complete installed registry.</p>
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
 }

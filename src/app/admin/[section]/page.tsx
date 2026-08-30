@@ -17,12 +17,10 @@ import {
   getAdminPortfolioStats,
   getAdminResumes,
   getAdminResumeStats,
-  getAdminThemes,
-  getAdminThemeStats,
+  getAdminThemeRegistry,
   getAdminUsers,
   getAdminUserStats,
 } from "@/lib/admin/queries";
-import { supportedLayoutKeys } from "@/lib/admin/validation";
 import type {
   AccountStatus,
   DeploymentStatus,
@@ -161,17 +159,12 @@ export default async function AdminSectionPage({
 
   if (section === "themes") {
     const status = valueOf(raw.status) === "active" || valueOf(raw.status) === "inactive" ? valueOf(raw.status) as "active" | "inactive" : "all" as const;
-    const order = valueOf(raw.order) === "newest" || valueOf(raw.order) === "name" ? valueOf(raw.order) as "newest" | "name" : "updated" as const;
+    const order = valueOf(raw.order) === "name" ? "name" as const : "registry" as const;
     const query = { search: valueOf(raw.search), status, order };
-    const [themes, stats] = await Promise.all([
-      getAdminThemes({ search: query.search, isActive: status === "all" ? undefined : status === "active", order, page: valueOf(raw.page), pageSize: "8" }),
-      getAdminThemeStats(),
-    ]);
-    const editingTheme = themes.items.find((theme) => theme.id === valueOf(raw.edit));
-    const editor = valueOf(raw.new) === "1" ? { mode: "new" as const } : editingTheme ? { mode: "edit" as const, theme: editingTheme } : undefined;
+    const registry = await getAdminThemeRegistry();
     const success = valueOf(raw.success);
     const error = valueOf(raw.error);
-    return <ThemeManagementScreen themes={themes} stats={stats} query={query} layoutKeys={supportedLayoutKeys()} editor={editor} message={success ? { kind: "success", text: success } : error ? { kind: "error", text: error } : undefined} />;
+    return <ThemeManagementScreen registry={registry} query={query} message={success ? { kind: "success", text: success } : error ? { kind: "error", text: error } : undefined} />;
   }
 
   if (section === "deployments") {

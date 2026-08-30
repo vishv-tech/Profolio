@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { ThemeConfigSchema } from "@/lib/validation/theme";
-import { careerThemePack } from "@/themes/career-pack/registry";
+import { allThemePack } from "@/themes/registry";
 import type { ThemeConfig } from "@/types/theme";
 
 const httpsUrl = z
@@ -20,7 +20,7 @@ export const accountStatusChangeSchema = userIdSchema.extend({
 export const themeIdSchema = z.strictObject({ themeId: z.uuid() });
 
 export function supportedLayoutKeys(): string[] {
-  return careerThemePack.map((theme) => theme.layoutKey);
+  return allThemePack.map((theme) => theme.layoutKey);
 }
 
 export type ThemeInput = {
