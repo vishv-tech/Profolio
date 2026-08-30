@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
@@ -5,32 +7,46 @@ import {
   SectionRenderer,
   ThemeShell,
 } from "../shared";
+import styles from "../shared/career-studio.module.css";
 
-export default function ArchitectDesignerTheme({ data, config }: ThemeComponentProps) {
+function revealStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
+}
+
+export default function ArchitectDesignerTheme({
+  data,
+  config,
+}: ThemeComponentProps) {
   const sections = getVisibleThemeSections(data, config);
 
   return (
-    <ThemeShell config={config} layoutKey="career-architect-designer">
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12">
+    <ThemeShell
+      className={`${styles.root} ${styles.architect}`}
+      config={config}
+      layoutKey="career-architect-designer"
+    >
+      <div className={styles.architectFrame}>
+        <div className={styles.architectTopline}>
+          <span className={styles.microLabel}>Spatial practice / selected work</span>
+          <span className={styles.microLabel}>Studio folio</span>
+        </div>
         <PortfolioHeader
-          className="max-w-4xl border-l-8 pl-6"
+          className={styles.architectHero}
           config={config}
           data={data}
           imageClassName="rounded-none"
         />
-        <main
-          className="mt-14 grid items-start md:grid-cols-2"
-          style={{ gap: "var(--career-section-gap)" }}
-        >
+
+        <main className={styles.architectPlan}>
           {sections.map((sectionKey, index) => (
-            <SectionRenderer
-              className={`min-h-40 border p-5 ${
-                sectionKey === "projects" || index % 4 === 0 ? "md:col-span-2" : ""
-              }`}
-              data={data}
+            <div
+              className={`${styles.sectionCard} ${styles.architectSection}`}
+              data-reveal
               key={sectionKey}
-              sectionKey={sectionKey}
-            />
+              style={revealStyle(index + 1)}
+            >
+              <SectionRenderer data={data} sectionKey={sectionKey} />
+            </div>
           ))}
         </main>
       </div>

@@ -3,9 +3,9 @@ import { defineCareerTheme } from "../types";
 export const architectDesignerManifest = defineCareerTheme({
   layoutKey: "career-architect-designer",
   name: "Studio Folio",
-  description: "An asymmetric project-led starter for spatial and visual designers.",
+  description: "A spatial studio folio with blueprint rhythm, asymmetric project blocks, and editorial scale.",
   category: "Design",
   careerTags: ["architect", "interior designer", "urban designer", "spatial designer"],
-  styleTags: ["asymmetric", "portfolio", "project-forward"],
+  styleTags: ["spatial", "blueprint grid", "asymmetric", "project-forward"],
   component: () => import("./ArchitectDesignerTheme"),
 });

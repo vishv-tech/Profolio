@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
@@ -5,34 +7,49 @@ import {
   SectionRenderer,
   ThemeShell,
 } from "../shared";
+import styles from "../shared/career-studio.module.css";
 
-export default function ProductDesignerTheme({ data, config }: ThemeComponentProps) {
+function revealStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
+}
+
+export default function ProductDesignerTheme({
+  data,
+  config,
+}: ThemeComponentProps) {
   const sections = getVisibleThemeSections(data, config);
 
   return (
-    <ThemeShell config={config} layoutKey="career-product-designer">
-      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
-        <PortfolioHeader
-          className="max-w-3xl pb-8"
-          config={config}
-          data={data}
-          imageClassName="rounded-[var(--career-radius)]"
-        />
-        <main
-          className="grid items-start border-t pt-8 lg:grid-cols-[1.35fr_0.65fr]"
-          style={{ gap: "var(--career-section-gap)" }}
-        >
-          {sections.map((sectionKey) => (
-            <SectionRenderer
-              className={`rounded-[var(--career-radius)] p-5 ${
-                sectionKey === "projects" || sectionKey === "experience"
-                  ? "lg:col-start-1"
-                  : "lg:col-start-2"
-              }`}
-              data={data}
+    <ThemeShell
+      className={`${styles.root} ${styles.product}`}
+      config={config}
+      layoutKey="career-product-designer"
+    >
+      <div className={styles.productFrame}>
+        <section className={styles.productHero} data-reveal style={revealStyle(0)}>
+          <PortfolioHeader
+            className={styles.productHeader}
+            config={config}
+            data={data}
+            imageClassName="rounded-[var(--career-radius)]"
+          />
+          <div className={styles.productStatement} aria-hidden="true">
+            <span className={styles.microLabel}>Product casebook</span>
+            <strong>Work / process</strong>
+          </div>
+        </section>
+
+        <main className={styles.productGrid}>
+          {sections.map((sectionKey, index) => (
+            <div
+              className={`${styles.sectionCard} ${styles.productSection}`}
+              data-reveal
+              data-section={sectionKey}
               key={sectionKey}
-              sectionKey={sectionKey}
-            />
+              style={revealStyle(index + 1)}
+            >
+              <SectionRenderer data={data} sectionKey={sectionKey} />
+            </div>
           ))}
         </main>
       </div>

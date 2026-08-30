@@ -544,6 +544,215 @@
   text-transform: uppercase;
 }
 
+.architect::before {
+  opacity: .3;
+  background-image:
+    linear-gradient(var(--career-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--career-border) 1px, transparent 1px);
+  background-size: clamp(2rem, 5vw, 4.5rem) clamp(2rem, 5vw, 4.5rem);
+}
+
+.architectFrame {
+  width: min(100% - 1.25rem, 88rem);
+  margin-inline: auto;
+  padding-block: clamp(1rem, 4vw, 3.5rem);
+}
+
+.architectTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .75rem;
+}
+
+.architectHero {
+  position: relative;
+  min-height: 26rem;
+  justify-content: end;
+  padding: clamp(1.5rem, 6vw, 5rem);
+  border: 1px solid var(--career-border);
+  background:
+    linear-gradient(135deg, transparent 55%, color-mix(in srgb, var(--career-accent) 14%, transparent)),
+    var(--career-surface);
+}
+
+.architectHero::before {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: min(32vw, 18rem);
+  aspect-ratio: 1.45;
+  border: 1px solid var(--career-accent);
+  box-shadow:
+    -1.25rem 1.25rem 0 -1px var(--career-surface),
+    -1.25rem 1.25rem 0 var(--career-border);
+  content: "";
+}
+
+.architectPlan {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--career-section-gap);
+  margin-top: var(--career-section-gap);
+}
+
+.architectSection {
+  grid-column: span 5;
+  min-height: 16rem;
+  padding: clamp(1.1rem, 3vw, 2rem);
+  border-radius: 0;
+}
+
+.architectSection:nth-child(3n + 1) {
+  grid-column: span 7;
+}
+
+.architectSection:nth-child(4n) {
+  grid-column: 2 / span 9;
+}
+
+.clinical {
+  background:
+    radial-gradient(circle at 90% 8%, color-mix(in srgb, var(--career-accent) 12%, transparent), transparent 24rem),
+    var(--career-background);
+}
+
+.clinicalFrame {
+  width: min(100% - 1.5rem, 76rem);
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 5vw, 4.5rem);
+}
+
+.clinicalHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(1.25rem, 4vw, 3rem);
+  align-items: center;
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid var(--career-border);
+  border-radius: calc(var(--career-radius) * 1.5);
+  background: var(--career-surface);
+  box-shadow: 0 18px 55px color-mix(in srgb, var(--career-accent) 8%, transparent);
+}
+
+.clinicalPulse {
+  display: grid;
+  width: clamp(5rem, 12vw, 8rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--career-border);
+  border-radius: 50%;
+  color: var(--career-accent);
+  background: color-mix(in srgb, var(--career-accent) 7%, var(--career-surface));
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 300;
+}
+
+.clinicalBody {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  margin-top: clamp(2rem, 5vw, 4rem);
+}
+
+.clinicalRail {
+  align-self: start;
+  padding: 1.25rem;
+  border-left: 3px solid var(--career-accent);
+  color: var(--career-muted);
+  font-size: .8rem;
+  line-height: 1.7;
+}
+
+.clinicalSections {
+  display: grid;
+  gap: var(--career-section-gap);
+}
+
+.clinicalSection {
+  position: relative;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.clinicalSection::before {
+  position: absolute;
+  top: 1.35rem;
+  right: 1.35rem;
+  width: .8rem;
+  height: .8rem;
+  border: solid var(--career-accent);
+  border-width: 0 2px 2px 0;
+  content: "";
+}
+
+.clinicalSection[data-section="education"],
+.clinicalSection[data-section="certifications"] {
+  border-left: 4px solid var(--career-accent);
+}
+
+.product {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--career-accent) 7%, var(--career-background)), var(--career-background) 32rem);
+}
+
+.productFrame {
+  width: min(100% - 1.25rem, 84rem);
+  margin-inline: auto;
+  padding-block: clamp(1rem, 4vw, 3.5rem);
+}
+
+.productHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(14rem, .8fr);
+  overflow: hidden;
+  border: 1px solid var(--career-border);
+  border-radius: calc(var(--career-radius) * 1.4);
+  background: var(--career-surface);
+}
+
+.productHeader {
+  padding: clamp(1.75rem, 6vw, 5rem);
+}
+
+.productStatement {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  color: color-mix(in srgb, var(--career-surface) 94%, var(--career-text));
+  background: var(--career-accent);
+}
+
+.productStatement strong {
+  font-family: var(--career-heading-font);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 650;
+  line-height: .9;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--career-section-gap);
+  margin-top: var(--career-section-gap);
+}
+
+.productSection {
+  grid-column: span 5;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.productSection[data-section="projects"],
+.productSection[data-section="experience"] {
+  grid-column: span 7;
+}
+
+.productSection:nth-child(4n + 1) {
+  grid-column: 1 / -1;
+}
+
 @keyframes studio-reveal {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
@@ -579,12 +788,24 @@
   }
 
   .legalBody,
-  .consultingCover {
+  .consultingCover,
+  .clinicalBody,
+  .productHero {
     grid-template-columns: 1fr;
   }
 
   .legalRail {
     display: none;
+  }
+
+  .architectSection,
+  .architectSection:nth-child(3n + 1),
+  .architectSection:nth-child(4n),
+  .productSection,
+  .productSection[data-section="projects"],
+  .productSection[data-section="experience"],
+  .productSection:nth-child(4n + 1) {
+    grid-column: span 6;
   }
 }
 
@@ -619,6 +840,32 @@
 
   .consultingSlide:nth-child(3n + 1) {
     grid-column: auto;
+  }
+
+  .architectHero {
+    min-height: auto;
+  }
+
+  .architectHero::before {
+    display: none;
+  }
+
+  .architectSection,
+  .architectSection:nth-child(3n + 1),
+  .architectSection:nth-child(4n),
+  .productSection,
+  .productSection[data-section="projects"],
+  .productSection[data-section="experience"],
+  .productSection:nth-child(4n + 1) {
+    grid-column: 1 / -1;
+  }
+
+  .clinicalHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .clinicalPulse {
+    display: none;
   }
 }
 
