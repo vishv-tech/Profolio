@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
@@ -5,34 +7,51 @@ import {
   SectionRenderer,
   ThemeShell,
 } from "../shared";
+import styles from "../shared/career-studio.module.css";
 
-export default function ElectricalEngineerTheme({ data, config }: ThemeComponentProps) {
+function revealStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
+}
+
+export default function ElectricalEngineerTheme({
+  data,
+  config,
+}: ThemeComponentProps) {
   const sections = getVisibleThemeSections(data, config);
 
   return (
-    <ThemeShell config={config} layoutKey="career-electrical-engineer">
-      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+    <ThemeShell
+      className={`${styles.root} ${styles.electrical}`}
+      config={config}
+      layoutKey="career-electrical-engineer"
+    >
+      <div className={styles.electricalFrame}>
+        <div className={styles.signalBar} data-reveal style={revealStyle(0)}>
+          <span>Signal portfolio / online</span>
+          <span className={styles.signalDots} aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+        </div>
+
         <PortfolioHeader
-          className="border-y py-8"
+          className={styles.electricalHero}
           config={config}
           data={data}
-          imageClassName="rounded-none"
+          imageClassName="rounded-[var(--career-radius)]"
         />
-        <main
-          className="mt-8 grid md:grid-cols-2 lg:grid-cols-3"
-          style={{ gap: "var(--career-section-gap)" }}
-        >
-          {sections.map((sectionKey) => (
-            <SectionRenderer
-              className={`border-t-2 p-4 ${
-                sectionKey === "experience" || sectionKey === "projects"
-                  ? "lg:col-span-2"
-                  : ""
-              }`}
-              data={data}
+
+        <main className={styles.electricalGrid}>
+          {sections.map((sectionKey, index) => (
+            <div
+              className={`${styles.sectionCard} ${styles.electricalSection}`}
+              data-reveal
               key={sectionKey}
-              sectionKey={sectionKey}
-            />
+              style={revealStyle(index + 1)}
+            >
+              <SectionRenderer data={data} sectionKey={sectionKey} />
+            </div>
           ))}
         </main>
       </div>

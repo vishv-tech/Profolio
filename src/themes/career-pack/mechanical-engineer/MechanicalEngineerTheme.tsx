@@ -1,31 +1,68 @@
+import type { CSSProperties } from "react";
+
 import type { ThemeComponentProps } from "../types";
 import {
   getVisibleThemeSections,
   PortfolioHeader,
+  SECTION_LABELS,
   SectionRenderer,
   ThemeShell,
 } from "../shared";
+import styles from "../shared/career-studio.module.css";
 
-export default function MechanicalEngineerTheme({ data, config }: ThemeComponentProps) {
+function revealStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
+}
+
+export default function MechanicalEngineerTheme({
+  data,
+  config,
+}: ThemeComponentProps) {
   const sections = getVisibleThemeSections(data, config);
 
   return (
-    <ThemeShell config={config} layoutKey="career-mechanical-engineer">
-      <div className="mx-auto max-w-5xl px-5 py-10 sm:px-10 sm:py-14">
-        <PortfolioHeader className="border-l-4 pl-5" config={config} data={data} />
-        <main
-          className="mt-12 border-l pl-5 sm:pl-8"
-          style={{ borderColor: "var(--career-border)" }}
-        >
-          {sections.map((sectionKey) => (
-            <SectionRenderer
-              className="relative border-b py-7 before:absolute before:-left-[calc(1.25rem+5px)] before:top-8 before:size-2.5 before:rounded-full before:bg-[var(--career-accent)] sm:before:-left-[calc(2rem+5px)]"
-              data={data}
-              key={sectionKey}
-              sectionKey={sectionKey}
-            />
-          ))}
-        </main>
+    <ThemeShell
+      className={`${styles.root} ${styles.mechanical}`}
+      config={config}
+      layoutKey="career-mechanical-engineer"
+    >
+      <div className={styles.mechanicalFrame}>
+        <div className={styles.mechanicalTitleBar} data-reveal style={revealStyle(0)}>
+          <span className={styles.microLabel}>Engineering portfolio / specification</span>
+          <span className={styles.microLabel}>Sheet 01</span>
+        </div>
+        <PortfolioHeader
+          className={styles.mechanicalHero}
+          config={config}
+          data={data}
+          imageClassName="rounded-none"
+        />
+
+        <div className={styles.mechanicalBody}>
+          <aside className={styles.mechanicalIndex} aria-label="Portfolio drawing index">
+            <p className={styles.microLabel}>Drawing index</p>
+            <ol>
+              {sections.map((sectionKey, index) => (
+                <li key={sectionKey}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span>{SECTION_LABELS[sectionKey]}</span>
+                </li>
+              ))}
+            </ol>
+          </aside>
+
+          <main className={styles.mechanicalSections}>
+            {sections.map((sectionKey, index) => (
+              <div data-reveal key={sectionKey} style={revealStyle(index + 1)}>
+                <SectionRenderer
+                  className={`${styles.sectionCard} ${styles.mechanicalSection}`}
+                  data={data}
+                  sectionKey={sectionKey}
+                />
+              </div>
+            ))}
+          </main>
+        </div>
       </div>
     </ThemeShell>
   );

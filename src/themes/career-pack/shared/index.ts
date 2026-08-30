@@ -1,4 +1,8 @@
-export { getVisibleThemeSections, hasThemeSectionContent } from "./data";
+export {
+  getVisibleThemeSections,
+  hasThemeSectionContent,
+  SECTION_LABELS,
+} from "./data";
 export { formatThemeDate, formatThemeDateRange } from "./dates";
 export { getThemeFontStack, THEME_FONT_STACKS } from "./fonts";
 export { getSafeExternalUrl, getThemeLinkLabel } from "./links";

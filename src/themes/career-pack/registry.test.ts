@@ -16,6 +16,9 @@ import {
   sparsePortfolioFixture,
 } from "./dev/fixtures";
 import type { CareerThemeLayoutKey } from "./types";
+import type { ThemeConfig } from "@/types/theme";
+
+import "../test/css-module-hook.cjs";
 
 const EXPECTED_LAYOUT_KEYS = [
   "career-content-creator",
@@ -29,6 +32,10 @@ const EXPECTED_LAYOUT_KEYS = [
   "career-product-designer",
   "career-business-consulting",
 ] as const satisfies readonly CareerThemeLayoutKey[];
+
+const POLISHED_LAYOUT_KEYS = EXPECTED_LAYOUT_KEYS.filter(
+  (layoutKey) => layoutKey !== "career-content-creator",
+);
 
 test("registers ten unique career theme layout keys", () => {
   const registeredKeys = careerThemePack.map((theme) => theme.layoutKey);
@@ -80,6 +87,92 @@ test("renders every career theme with sparse PortfolioData", async () => {
 
     assert.match(html, /Jordan Lee/);
     assert.doesNotMatch(html, />Experience</);
+  }
+});
+
+test("remaining career themes respect section order, hidden content, and visibility", async () => {
+  const constrainedConfig: ThemeConfig = {
+    ...careerThemeFixtureConfig,
+    sections: {
+      order: [
+        "skills",
+        "summary",
+        ...careerThemeFixtureConfig.sections.order.filter(
+          (sectionKey) => sectionKey !== "skills" && sectionKey !== "summary",
+        ),
+      ],
+      hidden: ["projects"],
+    },
+    visibility: {
+      showProfileImage: false,
+      showEmail: false,
+      showPhone: false,
+      showLocation: false,
+      showLinks: false,
+    },
+  };
+  const visibilityFixture = {
+    ...fullPortfolioFixture,
+    personal: {
+      ...fullPortfolioFixture.personal,
+      location: "Personal contact location",
+    },
+  };
+
+  for (const layoutKey of POLISHED_LAYOUT_KEYS) {
+    const Theme = await loadCareerThemeComponent(layoutKey);
+    assert.ok(Theme);
+    const html = renderToStaticMarkup(
+      createElement(Theme, {
+        config: constrainedConfig,
+        data: visibilityFixture,
+      }),
+    );
+
+    assert.ok(html.indexOf(">Skills<") < html.indexOf(">Profile<"));
+    assert.doesNotMatch(html, />Projects</);
+    assert.doesNotMatch(html, /Community Services Navigator/);
+    assert.doesNotMatch(
+      html,
+      /avery@example\.com|\+1 555 010 2486|Personal contact location/,
+    );
+    assert.doesNotMatch(html, /linkedin\.com\/in\/example|avery-morgan\.webp/);
+  }
+});
+
+test("switching career themes never mutates PortfolioData", async () => {
+  const before = structuredClone(fullPortfolioFixture);
+
+  for (const layoutKey of POLISHED_LAYOUT_KEYS.slice(0, 3)) {
+    const Theme = await loadCareerThemeComponent(layoutKey);
+    assert.ok(Theme);
+    renderToStaticMarkup(
+      createElement(Theme, {
+        config: careerThemeFixtureConfig,
+        data: fullPortfolioFixture,
+      }),
+    );
+  }
+
+  assert.deepEqual(fullPortfolioFixture, before);
+});
+
+test("career themes expose bounded motion through ThemeConfig", async () => {
+  const dynamicConfig = {
+    ...careerThemeFixtureConfig,
+    appearance: {
+      ...careerThemeFixtureConfig.appearance,
+      animationIntensity: "dynamic" as const,
+    },
+  };
+
+  for (const layoutKey of POLISHED_LAYOUT_KEYS.slice(0, 3)) {
+    const Theme = await loadCareerThemeComponent(layoutKey);
+    assert.ok(Theme);
+    const html = renderToStaticMarkup(
+      createElement(Theme, { config: dynamicConfig, data: fullPortfolioFixture }),
+    );
+    assert.match(html, /data-animation="dynamic"/);
   }
 });
 
