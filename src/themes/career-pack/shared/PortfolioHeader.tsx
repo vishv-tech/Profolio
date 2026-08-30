@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import type { PortfolioData } from "@/types/portfolio";
 import type { ThemeConfig } from "@/types/theme";
 
@@ -26,6 +30,10 @@ export function PortfolioHeader({
 }: PortfolioHeaderProps) {
   const { personal } = data;
   const safeImageUrl = getSafeExternalUrl(personal.profileImageUrl);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const showProfileImage = Boolean(
+    safeImageUrl && failedImageUrl !== safeImageUrl,
+  );
   const contactItems = [
     config.visibility.showEmail && personal.email.trim()
       ? {
@@ -61,14 +69,16 @@ export function PortfolioHeader({
       } flex flex-col gap-4 ${className}`}
     >
       {config.visibility.showProfileImage ? (
-        safeImageUrl ? (
+        showProfileImage ? (
           // Portfolio images are user-configured remote URLs, so Next Image cannot
-          // know their hosts at build time.
+          // know their hosts at build time. Broken URLs return to initials.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             alt={`${personal.fullName || "Portfolio"} profile`}
             className={`size-20 rounded-full border object-cover ${imageClassName}`}
-            src={safeImageUrl}
+            decoding="async"
+            onError={() => setFailedImageUrl(safeImageUrl)}
+            src={safeImageUrl ?? undefined}
             style={{ borderColor: "var(--career-border)" }}
           />
         ) : (
