@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 
 import { DeploymentActions } from "@/components/portfolio/deployment-actions";
+import { ManualPortfolioButton } from "@/components/portfolio/manual-portfolio-button";
 import { PortfolioScoreCard } from "@/components/portfolio/portfolio-score-card";
 import { UpgradePlanCard } from "@/components/portfolio-intelligence/upgrade-plan-card";
 import { Badge } from "@/components/ui/badge";
@@ -106,10 +107,13 @@ function WorkspaceMessage({
         </CardHeader>
         <CardContent className="space-y-4">
           <PortfolioChooser portfolios={portfolios} />
-          <Link className={buttonVariants()} href="/upload">
-            <FileUp aria-hidden="true" />
-            Upload Resume
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link className={buttonVariants()} href="/upload">
+              <FileUp aria-hidden="true" />
+              Upload Resume
+            </Link>
+            <ManualPortfolioButton />
+          </div>
         </CardContent>
       </Card>
     </main>
@@ -125,7 +129,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (result.status === "empty") {
     return (
       <WorkspaceMessage
-        description="Turn your resume into a professional portfolio, then choose a theme and publish when you are ready."
+        description="Upload a resume for assisted extraction or start with a blank portfolio and enter your information manually."
         title="Create your first portfolio"
       />
     );

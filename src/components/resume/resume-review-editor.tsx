@@ -12,6 +12,18 @@ import {
   ReviewTextarea,
   StringListEditor,
 } from "@/components/resume/review-primitives";
+import {
+  createEmptyAchievement,
+  createEmptyCertification,
+  createEmptyCustomSection,
+  createEmptyCustomSectionItem,
+  createEmptyEducation,
+  createEmptyExperience,
+  createEmptyLanguage,
+  createEmptyLink,
+  createEmptyProject,
+  createEmptySkillGroup,
+} from "@/lib/portfolios/defaults";
 import type {
   AchievementItem,
   CertificationItem,
@@ -37,96 +49,6 @@ const LINK_TYPES = [
   "youtube",
   "other",
 ] as const;
-
-const createId = () => crypto.randomUUID();
-
-const createExperience = (): ExperienceItem => ({
-  id: createId(),
-  company: "",
-  role: "",
-  employmentType: "",
-  location: "",
-  startDate: "",
-  endDate: "",
-  isCurrent: false,
-  description: "",
-  highlights: [],
-});
-
-const createEducation = (): EducationItem => ({
-  id: createId(),
-  institution: "",
-  degree: "",
-  fieldOfStudy: "",
-  location: "",
-  startDate: "",
-  endDate: "",
-  grade: "",
-  description: "",
-});
-
-const createProject = (): ProjectItem => ({
-  id: createId(),
-  name: "",
-  description: "",
-  technologies: [],
-  highlights: [],
-  projectUrl: "",
-  githubUrl: "",
-  startDate: "",
-  endDate: "",
-});
-
-const createSkillGroup = (): SkillGroup => ({
-  id: createId(),
-  category: "",
-  items: [],
-});
-
-const createAchievement = (): AchievementItem => ({
-  id: createId(),
-  title: "",
-  issuer: "",
-  date: "",
-  description: "",
-});
-
-const createCertification = (): CertificationItem => ({
-  id: createId(),
-  name: "",
-  issuer: "",
-  issueDate: "",
-  expiryDate: "",
-  credentialId: "",
-  credentialUrl: "",
-});
-
-const createLink = (): LinkItem => ({
-  id: createId(),
-  type: "other",
-  label: "",
-  url: "",
-});
-
-const createLanguage = (): LanguageItem => ({
-  id: createId(),
-  name: "",
-  proficiency: "",
-});
-
-const createCustomItem = (): CustomSectionItem => ({
-  id: createId(),
-  title: "",
-  subtitle: "",
-  date: "",
-  description: "",
-});
-
-const createCustomSection = (): CustomSection => ({
-  id: createId(),
-  title: "",
-  items: [],
-});
 
 function itemActions<T>(
   items: T[],
@@ -237,7 +159,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            experience: [...value.experience, createExperience()],
+            experience: [...value.experience, createEmptyExperience()],
           })
         }
         title="Experience"
@@ -335,7 +257,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            education: [...value.education, createEducation()],
+            education: [...value.education, createEmptyEducation()],
           })
         }
         title="Education"
@@ -415,7 +337,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            projects: [...value.projects, createProject()],
+            projects: [...value.projects, createEmptyProject()],
           })
         }
         title="Projects"
@@ -497,7 +419,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            skills: [...value.skills, createSkillGroup()],
+            skills: [...value.skills, createEmptySkillGroup()],
           })
         }
         title="Skills"
@@ -544,7 +466,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            achievements: [...value.achievements, createAchievement()],
+            achievements: [...value.achievements, createEmptyAchievement()],
           })
         }
         title="Achievements"
@@ -604,7 +526,7 @@ export function ResumeReviewEditor({
             ...value,
             certifications: [
               ...value.certifications,
-              createCertification(),
+              createEmptyCertification(),
             ],
           })
         }
@@ -678,7 +600,7 @@ export function ResumeReviewEditor({
         actionLabel="Add link"
         description="Check every URL and its destination type."
         onAdd={() =>
-          onChange({ ...value, links: [...value.links, createLink()] })
+          onChange({ ...value, links: [...value.links, createEmptyLink()] })
         }
         title="Links"
       >
@@ -734,7 +656,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            languages: [...value.languages, createLanguage()],
+            languages: [...value.languages, createEmptyLanguage()],
           })
         }
         title="Languages"
@@ -796,7 +718,7 @@ export function ResumeReviewEditor({
         onAdd={() =>
           onChange({
             ...value,
-            customSections: [...value.customSections, createCustomSection()],
+            customSections: [...value.customSections, createEmptyCustomSection()],
           })
         }
         title="Custom sections"
@@ -840,7 +762,7 @@ export function ResumeReviewEditor({
                     onClick={() =>
                       updateSection({
                         ...section,
-                        items: [...section.items, createCustomItem()],
+                        items: [...section.items, createEmptyCustomSectionItem()],
                       })
                     }
                     type="button"

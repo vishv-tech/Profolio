@@ -25,6 +25,7 @@ import {
   saveResumeReview,
   uploadResume,
 } from "@/app/upload/actions";
+import { ManualPortfolioButton } from "@/components/portfolio/manual-portfolio-button";
 import { ResumeReviewEditor } from "@/components/resume/resume-review-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -387,6 +388,23 @@ export function ResumeWorkflow({
               </Button>
             </CardFooter>
           </form>
+        </Card>
+      ) : null}
+
+      {!resume ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 className="text-lg font-semibold">Don&apos;t have a resume?</h2>
+            </CardTitle>
+            <CardDescription className="leading-6">
+              Start with a blank portfolio and add your information directly.
+              This path skips PDF upload and AI extraction completely.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <ManualPortfolioButton size="lg" />
+          </CardFooter>
         </Card>
       ) : null}
 

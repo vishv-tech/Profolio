@@ -9,7 +9,7 @@ import {
   ResumeExtractionError,
 } from "@/lib/ai/resume-extraction";
 import { requireActiveUser } from "@/lib/auth/guards";
-import { saveReviewedResumeAsDraft } from "@/lib/portfolios/mutations";
+import { createPortfolioDraft } from "@/lib/portfolios/mutations";
 import { createPortfolioSlugBase } from "@/lib/portfolios/slug";
 import { parseStoredPortfolio, toDatabaseJson } from "@/lib/resumes/json";
 import { ResumeProcessingTiming } from "@/lib/resumes/timing";
@@ -379,11 +379,13 @@ export async function saveResumeReview(
     user.profile.username,
     portfolio.data.personal.fullName || user.profile.full_name,
   );
-  const savedPortfolio = await saveReviewedResumeAsDraft({
+  const savedPortfolio = await createPortfolioDraft({
     content: portfolio.data,
     resumeId: parsedId.data,
+    source: "resume",
     slugBase,
     title,
+    userId: user.userId,
   });
 
   if (!savedPortfolio) {
@@ -396,5 +398,5 @@ export async function saveResumeReview(
   revalidatePath("/upload");
   revalidatePath("/dashboard");
   revalidatePath("/themes");
-  return { success: true, portfolioId: savedPortfolio.portfolio_id };
+  return { success: true, portfolioId: savedPortfolio.portfolioId };
 }
