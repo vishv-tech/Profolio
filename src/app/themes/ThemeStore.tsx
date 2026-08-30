@@ -291,7 +291,9 @@ export function ThemeStore({
           return;
         }
 
-        router.push(`/p/${encodeURIComponent(result.slug)}`);
+        router.push(
+          `/dashboard/deployments?portfolio=${encodeURIComponent(portfolioId)}&published=1`,
+        );
       } catch {
         setFeedback({
           tone: "error",
