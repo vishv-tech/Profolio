@@ -40,6 +40,7 @@ export function PageHeading({
   return (
     <div className="admin-page__heading">
       <div>
+        <span className="admin-page__eyebrow">Admin console</span>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
@@ -53,7 +54,7 @@ export function StatCard({
   label,
   value,
   tone = "blue",
-  detail = "Current database count",
+  detail = "Current total",
 }: {
   icon: LucideIcon;
   label: string;
