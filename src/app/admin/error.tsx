@@ -8,7 +8,7 @@ export default function AdminError({ reset }: { reset: () => void }) {
       <section className="admin-card admin-error" role="alert">
         <TriangleAlert aria-hidden="true" />
         <h1>Admin data could not be loaded</h1>
-        <p>The request failed safely. No database details were exposed.</p>
+        <p>We could not load this admin view. Try the request again.</p>
         <button className="admin-button admin-button--primary" type="button" onClick={reset}>
           Try again
         </button>

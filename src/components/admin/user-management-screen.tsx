@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Avatar } from "@/components/admin/admin-shell";
 import {
+  EmptyState,
   formatDate,
   formatNumber,
   Notice,
@@ -187,9 +188,7 @@ export function UserManagementScreen({
               </tbody>
             </table>
           </div>
-        ) : (
-          <p className="admin-manager__empty">No users match these filters.</p>
-        )}
+        ) : <EmptyState icon={Users} title="No users found" description="No accounts match the selected filters." />}
         <Pagination
           result={users}
           hrefForPage={(page) => listHref(query, page)}

@@ -53,18 +53,18 @@ function ViewsChart({ series }: { series: TimeSeriesPoint[] }) {
         <svg viewBox="0 0 640 220" role="img" aria-label="Portfolio views chart">
           <defs>
             <linearGradient id="admin-chart-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#1769f5" stopOpacity=".25" />
-              <stop offset="100%" stopColor="#1769f5" stopOpacity="0" />
+              <stop offset="0%" stopColor="#c5ded0" stopOpacity=".72" />
+              <stop offset="100%" stopColor="#c5ded0" stopOpacity="0" />
             </linearGradient>
           </defs>
           {[0, 55, 110, 165, 220].map((y) => (
-            <line key={y} x1="0" x2="640" y1={y} y2={y} stroke="#e7edf5" />
+            <line key={y} x1="0" x2="640" y1={y} y2={y} stroke="#dce3db" />
           ))}
           <polygon points={`0,220 ${points} 640,220`} fill="url(#admin-chart-fill)" />
           <polyline
             points={points}
             fill="none"
-            stroke="#1267f8"
+            stroke="#567565"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"

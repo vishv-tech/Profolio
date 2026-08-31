@@ -31,10 +31,10 @@ type ThemeQuery = {
 };
 
 const STATE_LABELS = {
-  missing: "Missing metadata",
-  duplicate: "Duplicate / error",
-  invalid: "Invalid config",
-  ready: "Metadata ready",
+  missing: "Setup required",
+  duplicate: "Needs attention",
+  invalid: "Configuration issue",
+  ready: "Ready",
 } as const;
 
 function ThemeRegistryCard({ entry }: { entry: CodedThemeRegistryEntry }) {
@@ -53,7 +53,7 @@ function ThemeRegistryCard({ entry }: { entry: CodedThemeRegistryEntry }) {
           <div>
             <div className="admin-theme-registry-card__eyebrow">
               <span>{entry.category}</span>
-              <span>Installed in code</span>
+              <span>Installed theme</span>
             </div>
             <h3>{entry.name}</h3>
             <p>{entry.description}</p>
@@ -67,7 +67,7 @@ function ThemeRegistryCard({ entry }: { entry: CodedThemeRegistryEntry }) {
             <dd>{entry.layoutKey}</dd>
           </div>
           <div>
-            <dt>Database</dt>
+            <dt>Readiness</dt>
             <dd>{STATE_LABELS[entry.metadataState]}</dd>
           </div>
           <div>
@@ -80,19 +80,19 @@ function ThemeRegistryCard({ entry }: { entry: CodedThemeRegistryEntry }) {
           <div className="admin-theme-registry-card__warning">
             <AlertTriangle aria-hidden="true" />
             <div>
-              <strong>{entry.databaseRows.length} rows use this layout key.</strong>
-              <p>Saving and publishing stay blocked until exactly one row remains.</p>
+              <strong>{entry.databaseRows.length} records use this layout.</strong>
+              <p>Keep one record before making the theme available.</p>
             </div>
           </div>
         ) : entry.metadataState === "invalid" ? (
           <div className="admin-theme-registry-card__warning">
             <AlertTriangle aria-hidden="true" />
-            <p>Run coded-theme sync to restore the canonical ThemeConfig.</p>
+            <p>Sync installed themes to restore the approved configuration.</p>
           </div>
         ) : entry.metadataState === "missing" ? (
           <div className="admin-theme-registry-card__warning">
             <Database aria-hidden="true" />
-            <p>No database metadata row exists yet. Run coded-theme sync.</p>
+            <p>This theme has not been synchronized yet.</p>
           </div>
         ) : null}
 
@@ -168,26 +168,26 @@ export function ThemeManagementScreen({
   return (
     <div className="admin-page">
       <PageHeading
-        title="Coded theme registry"
-        description="Application manifests define installed themes. Supabase stores synchronized metadata and availability only."
+        title="Theme management"
+        description="Review installed themes, availability, and publishing readiness."
         actions={
           <form action={syncCodedThemes}>
             <ConfirmActionButton
               className="admin-button admin-button--primary"
               type="submit"
-              confirmation="Synchronize all coded theme manifests with database metadata? Existing active/inactive choices are preserved."
+              confirmation="Synchronize all installed themes? Existing availability choices are preserved."
             >
               <FolderSync aria-hidden="true" />
-              Sync coded themes
+              Sync themes
             </ConfirmActionButton>
           </form>
         }
       />
 
       <div className="admin-stats admin-stats--three">
-        <StatCard icon={Code2} label="Installed in code" value={registry.entries.length} tone="purple" />
-        <StatCard icon={CheckCircle2} label="Ready to save" value={registry.readyToSaveCount} tone="green" />
-        <StatCard icon={Database} label="Database rows" value={registry.databaseMetadataCount} />
+        <StatCard icon={Code2} label="Installed themes" value={registry.entries.length} tone="purple" />
+        <StatCard icon={CheckCircle2} label="Ready" value={registry.readyToSaveCount} tone="green" />
+        <StatCard icon={Database} label="Theme records" value={registry.databaseMetadataCount} />
       </div>
 
       <section className="admin-card admin-manager">
@@ -197,15 +197,15 @@ export function ThemeManagementScreen({
               name="search"
               type="search"
               defaultValue={query.search}
-              placeholder="Search coded themes"
-              aria-label="Search coded themes"
+              placeholder="Search themes"
+              aria-label="Search themes"
             />
-            <select name="status" defaultValue={query.status}>
+            <select name="status" defaultValue={query.status} aria-label="Filter theme availability">
               <option value="all">All availability</option>
               <option value="active">Active metadata</option>
               <option value="inactive">Inactive or missing</option>
             </select>
-            <select name="order" defaultValue={query.order}>
+            <select name="order" defaultValue={query.order} aria-label="Sort themes">
               <option value="registry">Registry order</option>
               <option value="name">Name</option>
             </select>
@@ -222,7 +222,7 @@ export function ThemeManagementScreen({
           <div className="admin-theme-registry-summary">
             <AlertTriangle aria-hidden="true" />
             <p>
-              {registry.missingCount} missing · {registry.duplicateCount} duplicate · {registry.invalidCount} invalid. Only unique, active rows with canonical ThemeConfig are available in production.
+              {registry.missingCount} need setup · {registry.duplicateCount} duplicate · {registry.invalidCount} invalid. Only ready, active themes are available for publishing.
             </p>
           </div>
         ) : null}
@@ -231,7 +231,7 @@ export function ThemeManagementScreen({
           <div className="admin-theme-registry-summary is-error">
             <AlertTriangle aria-hidden="true" />
             <p>
-              {registry.uninstalledRows.length} database row(s) reference layout keys that are not installed in code. They are never synchronized or selectable.
+              {registry.uninstalledRows.length} theme record(s) do not match an installed theme and cannot be selected.
             </p>
           </div>
         ) : null}
@@ -245,7 +245,7 @@ export function ThemeManagementScreen({
         {!entries.length ? (
           <div className="admin-empty">
             <span><Palette aria-hidden="true" /></span>
-            <h2>No coded themes match these filters</h2>
+            <h2>No themes match these filters</h2>
             <p>Clear the filters to return to the complete installed registry.</p>
           </div>
         ) : null}

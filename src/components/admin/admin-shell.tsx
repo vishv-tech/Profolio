@@ -90,7 +90,10 @@ export function AdminShell({
             <span />
             <span />
           </span>
-          <span>Profolio</span>
+          <span className="admin-brand__copy">
+            <strong>Profolio</strong>
+            <small>Admin console</small>
+          </span>
         </Link>
         <nav className="admin-nav" aria-label="Admin navigation">
           {navigation.map(({ href, label, icon: Icon, exact }) => {
