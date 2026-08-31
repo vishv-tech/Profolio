@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import styles from "./status-page.module.css";
+
 type ModulePlaceholderProps = {
   title: string;
   description?: string;
@@ -18,15 +20,15 @@ type ModulePlaceholderProps = {
 export function ModulePlaceholder({
   title,
   description = "Module coming in the next development phase.",
-  eyebrow = "The Architects",
+  eyebrow = "Profolio",
   icon: Icon = Blocks,
 }: ModulePlaceholderProps) {
   return (
-    <main className="flex min-h-svh flex-1 items-center justify-center bg-muted/30 px-6 py-16">
-      <Card className="w-full max-w-lg">
+    <main className={`${styles.page} ${styles.placeholderPage}`}>
+      <Card>
         <CardHeader className="gap-5">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className={styles.icon}>
               <Icon aria-hidden="true" className="size-5" />
             </div>
             <Badge variant="secondary">Foundation</Badge>

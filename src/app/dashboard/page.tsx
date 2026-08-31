@@ -30,6 +30,9 @@ import { scorePortfolio } from "@/lib/portfolio-score/score";
 import { getPortfolioWorkspace } from "@/lib/portfolios/workspace";
 import type { WorkspacePortfolioChoice } from "@/lib/portfolios/workspace-model";
 
+import workspaceStyles from "@/components/workspace/workspace.module.css";
+import styles from "./dashboard-overview.module.css";
+
 type DashboardPageProps = {
   searchParams: Promise<{
     portfolio?: string | string[];
@@ -61,13 +64,12 @@ function PortfolioChooser({
   if (portfolios.length < 2) return null;
 
   return (
-    <form className="flex flex-col gap-2 sm:max-w-md" method="get">
-      <label className="text-sm font-medium" htmlFor="portfolio">
+    <form className={styles.chooser} method="get">
+      <label htmlFor="portfolio">
         Portfolio
       </label>
-      <div className="flex gap-2">
+      <div className={styles.chooserRow}>
         <select
-          className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           defaultValue={selectedId}
           id="portfolio"
           name="portfolio"
@@ -78,7 +80,7 @@ function PortfolioChooser({
             </option>
           ))}
         </select>
-        <button className={buttonVariants()} type="submit">
+        <button className={`${buttonVariants()} ${styles.chooserButton}`} type="submit">
           View
         </button>
       </div>
@@ -96,23 +98,27 @@ function WorkspaceMessage({
   title: string;
 }) {
   return (
-    <main className="flex flex-1 bg-muted/30 px-4 py-10 sm:px-6">
-      <Card className="mx-auto h-fit w-full max-w-2xl">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface} ${styles.emptyMain}`}>
+      <Card className={styles.emptyCard}>
         <CardHeader>
-          <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+          <div className={workspaceStyles.emptyIcon}>
             <Rocket aria-hidden="true" className="size-5" />
           </div>
-          <CardTitle><h1>{title}</h1></CardTitle>
+          <p className={workspaceStyles.eyebrow}>Start your portfolio</p>
+          <CardTitle><h1 className={styles.emptyTitle}>{title}</h1></CardTitle>
           <CardDescription className="leading-6">{description}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <PortfolioChooser portfolios={portfolios} />
-          <div className="flex flex-wrap gap-2">
-            <Link className={buttonVariants()} href="/upload">
-              <FileUp aria-hidden="true" />
-              Upload Resume
+          <div className={styles.emptyOptions}>
+            <Link className={styles.emptyOption} href="/upload">
+              <span className={styles.emptyOptionIcon}><FileUp aria-hidden="true" /></span>
+              <span>
+                <strong>Upload Resume</strong>
+                <span>Start with assisted extraction from your PDF.</span>
+              </span>
             </Link>
-            <ManualPortfolioButton />
+            <ManualPortfolioButton className={`${styles.manualOption}`} />
           </div>
         </CardContent>
       </Card>
@@ -164,95 +170,96 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     searchValue(params.published) === "1" && isPublished;
 
   return (
-    <main className="min-w-0 flex-1 bg-muted/30 px-4 py-8 sm:px-6">
-      <div className="mx-auto w-full max-w-6xl space-y-6">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface}`}>
+      <div className={`${workspaceStyles.container} space-y-6`}>
         {showPublishedSuccess ? (
           <PublishedSuccessBanner version={deploymentOverview?.deployment.version} />
         ) : null}
 
-        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <header className={styles.overviewHeader}>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              Portfolio Overview
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                {portfolio.title}
-              </h1>
-              <Badge
-                className="capitalize"
-                variant={isPublished ? "default" : "secondary"}
-              >
-                {portfolio.status}
-              </Badge>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Theme: {portfolio.theme?.name ?? "Not selected"}
+            <p className={workspaceStyles.eyebrow}>Your workspace</p>
+            <h1 className={styles.headerTitle}>Your portfolio workspace.</h1>
+            <p className={styles.headerText}>
+              Keep your story polished, choose how it looks, and share the latest version when you are ready.
             </p>
           </div>
           <PortfolioChooser portfolios={portfolios} selectedId={portfolio.id} />
         </header>
 
-        <section aria-label="Portfolio actions" className="flex flex-wrap gap-2">
-          <Link
-            className={buttonVariants()}
+        <section aria-label="Portfolio actions" className={styles.actionBar}>
+          <div className={styles.primaryActions}>
+            <Link
+            className={`${buttonVariants()} ${styles.primaryButton}`}
             href={`/dashboard/editor?${portfolioQuery}`}
           >
             <Pencil aria-hidden="true" />
             Edit Portfolio
           </Link>
           <Link
-            className={buttonVariants({ variant: "outline" })}
+            className={`${buttonVariants({ variant: "outline" })} ${styles.secondaryButton}`}
             href={`/themes?${portfolioQuery}`}
           >
             <Palette aria-hidden="true" />
             Change Theme
           </Link>
           <Link
-            className={buttonVariants({ variant: "outline" })}
+            className={`${buttonVariants({ variant: "outline" })} ${styles.secondaryButton}`}
             href={`/themes?${portfolioQuery}`}
           >
             <Rocket aria-hidden="true" />
             {isPublished ? "Republish" : "Publish"}
           </Link>
+          </div>
+          <div className={styles.utilityActions}>
           <Link
-            className={buttonVariants({ variant: "ghost" })}
+            className={`${buttonVariants({ variant: "ghost" })} ${styles.utilityButton}`}
             href={`/dashboard/analytics?${portfolioQuery}`}
           >
             <BarChart3 aria-hidden="true" />
             Analytics
           </Link>
           <Link
-            className={buttonVariants({ variant: "ghost" })}
+            className={`${buttonVariants({ variant: "ghost" })} ${styles.utilityButton}`}
             href={`/dashboard/export?${portfolioQuery}`}
           >
             <Download aria-hidden="true" />
             Export
           </Link>
           <Link
-            className={buttonVariants({ variant: "ghost" })}
+            className={`${buttonVariants({ variant: "ghost" })} ${styles.utilityButton}`}
             href={`/dashboard/deployments?${portfolioQuery}`}
           >
             <History aria-hidden="true" />
             Deployment details
           </Link>
-          <Link className={buttonVariants({ variant: "ghost" })} href="/upload">
+          <Link className={`${buttonVariants({ variant: "ghost" })} ${styles.utilityButton}`} href="/upload">
             <FileUp aria-hidden="true" />
             New Portfolio
           </Link>
+          </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
-          <Card>
+        <div className={styles.portfolioGrid}>
+          <Card className={styles.portfolioHero}>
             <CardHeader>
-              <CardTitle><h2>Public Portfolio</h2></CardTitle>
+              <div className={styles.portfolioHeader}>
+                <div>
+                  <p className={workspaceStyles.eyebrow}>Current portfolio</p>
+                  <CardTitle><h2 className={styles.portfolioName}>{portfolio.title}</h2></CardTitle>
+                  <p className={styles.themeLine}>Theme · {portfolio.theme?.name ?? "Not selected"}</p>
+                </div>
+                <Badge className="capitalize" variant={isPublished ? "default" : "secondary"}>
+                  {portfolio.status}
+                </Badge>
+              </div>
               <CardDescription>
                 {publicPath
                   ? "This published snapshot is publicly visible. Draft edits remain private until you republish."
                   : "This draft has no public link yet. Choose a theme and publish when it is ready."}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className={styles.publicArea}>
               {publicPath ? (
                 <DeploymentActions publicPath={publicPath} />
               ) : (
@@ -264,13 +271,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={styles.stateCard}>
             <CardHeader>
               <CardTitle><h2>Current state</h2></CardTitle>
               <CardDescription>Real saved portfolio and deployment values.</CardDescription>
             </CardHeader>
             <CardContent>
-              <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <dl className={styles.metadataGrid}>
                 <Metadata label="Visibility" value={portfolio.status} />
                 <Metadata
                   label="Theme"
@@ -295,7 +302,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <PortfolioScoreCard result={score} />
         <UpgradePlanCard portfolioId={portfolio.id} />
 
-        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <p className={styles.finePrint}>
           <CalendarClock aria-hidden="true" className="size-3.5" />
           Score is recalculated from the current draft whenever this page loads.
         </p>
@@ -306,9 +313,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
 function Metadata({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 break-words font-medium capitalize">{value}</dd>
+    <div className={styles.metadataItem}>
+      <dt>{label}</dt>
+      <dd className="capitalize">{value}</dd>
     </div>
   );
 }

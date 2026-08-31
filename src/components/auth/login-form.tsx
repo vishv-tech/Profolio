@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { login } from "@/lib/auth/actions";
 import type { AuthActionState } from "@/lib/auth/validation";
 
+import styles from "./auth-form.module.css";
+
 const initialState: AuthActionState = {
   status: "idle",
   message: "",
@@ -64,8 +66,8 @@ export function LoginForm() {
           aria-live="polite"
           className={
             state.status === "error"
-              ? "rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              : "rounded-lg bg-muted px-3 py-2 text-sm"
+              ? `${styles.feedbackError} px-3 py-2 text-sm`
+              : `${styles.feedbackInfo} px-3 py-2 text-sm`
           }
           role={state.status === "error" ? "alert" : "status"}
         >

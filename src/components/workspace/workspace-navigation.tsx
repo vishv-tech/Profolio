@@ -6,6 +6,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
+import styles from "./workspace.module.css";
+
 const ITEMS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
@@ -18,12 +20,12 @@ export function WorkspaceNavigation() {
   const portfolioId = searchParams.get("portfolio");
 
   return (
-    <aside className="border-b bg-background md:border-b-0 md:border-r">
+    <aside className={styles.sidebar}>
       <nav
         aria-label="Portfolio workspace"
-        className="flex max-w-full gap-1 overflow-x-auto px-3 py-2 md:sticky md:top-0 md:flex-col md:overflow-visible md:px-3 md:py-5"
+        className={styles.navigation}
       >
-        <p className="hidden px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground md:block">
+        <p className={styles.navLabel}>
           Workspace
         </p>
         {ITEMS.map((item) => {
@@ -40,10 +42,8 @@ export function WorkspaceNavigation() {
             <Link
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                styles.navItem,
+                active && styles.navItemActive,
               )}
               href={href}
               key={item.href}

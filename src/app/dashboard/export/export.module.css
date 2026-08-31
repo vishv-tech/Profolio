@@ -1,0 +1,83 @@
+.portfolioSummary {
+  background: #edf5ef !important;
+}
+
+.portfolioTitle {
+  color: #17201d;
+  font-size: 1.2rem;
+  font-weight: 720;
+  letter-spacing: -.025em;
+}
+
+.options {
+  display: grid;
+  gap: 1rem;
+}
+
+.optionCard {
+  min-height: 20rem;
+  justify-content: space-between;
+}
+
+.optionCard:first-child {
+  background:
+    radial-gradient(circle at 90% 5%, rgb(197 222 208 / 62%), transparent 14rem),
+    #fffdf8 !important;
+}
+
+.optionCard:last-child {
+  background:
+    radial-gradient(circle at 90% 5%, rgb(244 231 196 / 85%), transparent 15rem),
+    #fffdf8 !important;
+}
+
+.optionIcon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border-radius: 1rem;
+  color: #365849;
+  background: #c5ded0;
+}
+
+.optionCard:last-child .optionIcon {
+  color: #8c492f;
+  background: #f4e7c4;
+}
+
+.optionTitle {
+  margin-top: .7rem;
+  color: #17201d;
+  font-size: 1.45rem;
+  font-weight: 720;
+  letter-spacing: -.035em;
+}
+
+.exportButton,
+.downloadButton {
+  width: 100%;
+  min-height: 2.8rem;
+}
+
+.exportButton {
+  color: #fffdf8;
+  background: #17201d;
+}
+
+.downloadButton {
+  border-color: #b8cabe;
+  color: #365849;
+  background: #edf5ef;
+}
+
+.themeRequired {
+  border-style: dashed !important;
+  background: #f4e7c4 !important;
+}
+
+@media (min-width: 720px) {
+  .options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

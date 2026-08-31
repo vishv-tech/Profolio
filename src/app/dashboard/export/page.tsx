@@ -12,6 +12,10 @@ import {
 import { requireActiveUser } from "@/lib/auth/guards";
 import { getExportWorkspace } from "@/lib/export/queries";
 
+import workspaceStyles from "@/components/workspace/workspace.module.css";
+import utilityStyles from "../dashboard-utilities.module.css";
+import styles from "./export.module.css";
+
 type ExportPageProps = {
   searchParams: Promise<{ portfolio?: string | string[] }>;
 };
@@ -26,7 +30,7 @@ function ExportMessage({
   title: string;
 }) {
   return (
-    <Card>
+    <Card className={utilityStyles.messageCard}>
       <CardHeader>
         <CardTitle><h2>{title}</h2></CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -52,19 +56,20 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
   const result = await getExportWorkspace(user.userId, portfolioId);
 
   return (
-    <main className="flex flex-1 bg-muted/30 px-4 py-8 sm:px-6">
-      <div className="mx-auto w-full max-w-5xl space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface}`}>
+      <div className={`${workspaceStyles.narrowContainer} space-y-6`}>
+        <header className={utilityStyles.pageHeader}>
+          <div>
+            <div className={utilityStyles.headerIcon}>
               <Download aria-hidden="true" className="size-5" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Export portfolio</h1>
-            <p className="text-sm text-muted-foreground">
-              Save a print-ready PDF or download portable portfolio data.
+            <p className={`${workspaceStyles.eyebrow} mt-4`}>Export</p>
+            <h1 className={utilityStyles.title}>Take your portfolio with you.</h1>
+            <p className={utilityStyles.description}>
+              Create a print-ready PDF or keep a portable copy of your portfolio data.
             </p>
           </div>
-          <Link className={buttonVariants({ variant: "outline" })} href="/dashboard">
+          <Link className={`${buttonVariants({ variant: "outline" })} ${utilityStyles.backButton}`} href="/dashboard">
             <ArrowLeft aria-hidden="true" /> Dashboard
           </Link>
         </header>
@@ -87,13 +92,12 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
           />
         ) : (
           <>
-            <Card>
-              <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <form className="flex flex-1 flex-col gap-2 sm:max-w-md" method="get">
-                  <label className="text-sm font-medium" htmlFor="portfolio">Portfolio</label>
-                  <div className="flex gap-2">
+            <Card className={utilityStyles.selectorCard}>
+              <CardContent className={utilityStyles.selectorContent}>
+                <form className={utilityStyles.selectorForm} method="get">
+                  <label htmlFor="portfolio">Portfolio</label>
+                  <div className={utilityStyles.selectorRow}>
                     <select
-                      className="h-9 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                       defaultValue={result.selectedId}
                       id="portfolio"
                       name="portfolio"
@@ -104,7 +108,7 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
                         </option>
                       ))}
                     </select>
-                    <button className={buttonVariants()} type="submit">Choose</button>
+                    <button className={`${buttonVariants()} ${utilityStyles.selectorButton}`} type="submit">Choose</button>
                   </div>
                 </form>
               </CardContent>
@@ -121,7 +125,7 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
                 title="Portfolio data needs review"
               />
             ) : result.selection.status === "theme-required" ? (
-              <Card>
+              <Card className={styles.themeRequired}>
                 <CardHeader>
                   <CardTitle><h2>Choose a theme first</h2></CardTitle>
                   <CardDescription>
@@ -139,9 +143,9 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
               </Card>
             ) : (
               <>
-                <Card>
+                <Card className={styles.portfolioSummary}>
                   <CardHeader>
-                    <CardTitle><h2>{result.selection.portfolio.title}</h2></CardTitle>
+                    <CardTitle><h2 className={styles.portfolioTitle}>{result.selection.portfolio.title}</h2></CardTitle>
                     <CardDescription>
                       Theme: {result.selection.portfolio.themeName} · Status:{" "}
                       <span className="capitalize">{result.selection.portfolio.status}</span>
@@ -149,20 +153,20 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
                   </CardHeader>
                 </Card>
 
-                <section aria-label="Export options" className="grid gap-6 md:grid-cols-2">
-                  <Card>
+                <section aria-label="Export options" className={styles.options}>
+                  <Card className={styles.optionCard}>
                     <CardHeader>
-                      <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                      <div className={styles.optionIcon}>
                         <FileText aria-hidden="true" className="size-5" />
                       </div>
-                      <CardTitle><h2>PDF</h2></CardTitle>
+                      <CardTitle><h2 className={styles.optionTitle}>PDF portfolio</h2></CardTitle>
                       <CardDescription>
-                        Open the selected theme in a private print view, then choose Save as PDF in your browser.
+                        Create a print-ready version of your portfolio using your selected design.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Link
-                        className={buttonVariants()}
+                        className={`${buttonVariants()} ${styles.exportButton}`}
                         href={`/export/${result.selectedId}/print`}
                         target="_blank"
                       >
@@ -171,19 +175,19 @@ export default async function ExportPage({ searchParams }: ExportPageProps) {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className={styles.optionCard}>
                     <CardHeader>
-                      <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                      <div className={styles.optionIcon}>
                         <FileJson aria-hidden="true" className="size-5" />
                       </div>
-                      <CardTitle><h2>Portfolio data</h2></CardTitle>
+                      <CardTitle><h2 className={styles.optionTitle}>Portfolio data</h2></CardTitle>
                       <CardDescription>
-                        Download validated PortfolioData, ThemeConfig, and portable portfolio metadata as JSON.
+                        Download a portable copy of your portfolio content and settings.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <a
-                        className={buttonVariants({ variant: "outline" })}
+                        className={`${buttonVariants({ variant: "outline" })} ${styles.downloadButton}`}
                         download
                         href={`/api/export/${result.selectedId}`}
                       >

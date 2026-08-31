@@ -15,6 +15,8 @@ import type {
 } from "@/lib/profile-media/types";
 import { MAX_PROFILE_PHOTO_BYTES } from "@/lib/profile-media/validation";
 
+import styles from "./profile-photo-editor.module.css";
+
 const SUPPORTED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -139,16 +141,15 @@ export function ProfilePhotoEditor({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border bg-muted/20 p-4 sm:col-span-2">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-xl border bg-background text-xl font-semibold">
+    <div className={styles.card}>
+      <div className={styles.mediaRow}>
+        <div className={styles.preview}>
           {showImage ? (
             // This controlled URL is either an existing safe legacy URL or an
             // owned public Supabase Storage object.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               alt={`${fullName.trim() || "Portfolio owner"} profile preview`}
-              className="size-full object-cover"
               onError={() => setFailedUrl(displayedUrl)}
               src={displayedUrl}
             />
@@ -156,15 +157,15 @@ export function ProfilePhotoEditor({
             <span aria-label="Profile photo fallback">{initials(fullName)}</span>
           )}
         </div>
-        <div className="space-y-3">
+        <div className={styles.copy}>
           <div>
-            <p className="font-medium">Profile photo</p>
-            <p className="text-sm leading-6 text-muted-foreground">
+            <p className={styles.copyTitle}>Profile photo</p>
+            <p className={styles.copyText}>
               JPEG, PNG, or WebP up to 5 MB. The photo may appear publicly after
               you publish or republish this portfolio.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className={styles.actions}>
             <Button
               disabled={pending}
               onClick={() => inputRef.current?.click()}
@@ -205,27 +206,26 @@ export function ProfilePhotoEditor({
         </div>
       </div>
       {message ? (
-        <p aria-live="polite" className="text-sm text-muted-foreground">
+        <p aria-live="polite" className={styles.message}>
           {message}
         </p>
       ) : null}
       {scope.kind === "resume" && candidates.length > 0 ? (
-        <div className="space-y-3 border-t pt-4">
+        <div className={styles.candidateArea}>
           <div>
             <p className="text-sm font-medium">Images found in this resume</p>
-            <p className="text-xs leading-5 text-muted-foreground">
+            <p className={styles.candidateCopy}>
               When no candidate is clearly a portrait, choose one yourself. No
               image is selected automatically from an ambiguous group.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={styles.candidateGrid}>
             {candidates.map((candidate) => (
-              <div className="space-y-2 rounded-lg border bg-background p-2" key={candidate.path}>
+              <div className={styles.candidate} key={candidate.path}>
                 {/* Candidate URLs come from the authenticated server listing. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   alt={`Resume image candidate from page ${candidate.pageNumber}`}
-                  className="aspect-square w-full rounded-md object-cover"
                   src={candidate.url}
                 />
                 <Button

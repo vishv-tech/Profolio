@@ -1,0 +1,339 @@
+.overviewHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid #dce3db;
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(130deg, rgb(255 253 248 / 96%), rgb(237 245 239 / 90%)),
+    #fffdf8;
+  box-shadow: 0 16px 42px rgb(44 63 54 / 6%);
+}
+
+.headerTitle {
+  max-width: 42rem;
+  margin-top: .55rem;
+  color: #17201d;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  font-weight: 720;
+  letter-spacing: -.06em;
+  line-height: .98;
+}
+
+.headerText {
+  max-width: 40rem;
+  margin-top: .85rem;
+  color: #68736d;
+  line-height: 1.65;
+}
+
+.chooser {
+  display: flex;
+  width: min(100%, 25rem);
+  flex-direction: column;
+  gap: .45rem;
+}
+
+.chooser label {
+  color: #567565;
+  font-size: .7rem;
+  font-weight: 760;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.chooserRow {
+  display: flex;
+  gap: .55rem;
+}
+
+.chooserRow select {
+  min-height: 2.75rem;
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #cfd9d1;
+  border-radius: .8rem;
+  padding-inline: .85rem;
+  color: #17201d;
+  background: #fffdf8;
+  outline: none;
+}
+
+.chooserRow select:focus-visible {
+  border-color: #567565;
+  box-shadow: 0 0 0 3px rgb(86 117 101 / 18%);
+}
+
+.actionBar {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  padding: .9rem;
+  border: 1px solid #dce3db;
+  border-radius: 1rem;
+  background: #fffdf8;
+}
+
+.primaryActions,
+.utilityActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+.utilityActions {
+  padding-top: .75rem;
+  border-top: 1px solid #e6e9e3;
+}
+
+.primaryButton,
+.secondaryButton,
+.utilityButton,
+.chooserButton {
+  min-height: 2.65rem;
+  border-radius: .8rem;
+}
+
+.primaryButton,
+.chooserButton {
+  border-color: #17201d;
+  color: #fffdf8;
+  background: #17201d;
+}
+
+.primaryButton:hover,
+.chooserButton:hover {
+  background: #304039;
+}
+
+.secondaryButton {
+  border-color: #b9cebf;
+  color: #294a3d;
+  background: #e4efe8;
+}
+
+.secondaryButton:hover {
+  background: #d7e8dd;
+}
+
+.utilityButton {
+  color: #52635b;
+}
+
+.utilityButton:hover {
+  color: #17201d;
+  background: #f4efe3;
+}
+
+.portfolioGrid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.portfolioHero {
+  position: relative;
+  min-height: 20rem;
+  justify-content: space-between;
+  background:
+    radial-gradient(circle at 95% 5%, rgb(197 222 208 / 72%), transparent 18rem),
+    #fffdf8 !important;
+}
+
+.portfolioHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.portfolioName {
+  margin-top: .45rem;
+  color: #17201d;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  font-weight: 720;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+.themeLine {
+  margin-top: .65rem;
+  color: #68736d;
+  font-size: .85rem;
+}
+
+.publicArea {
+  padding-top: 1.2rem;
+  border-top: 1px solid #dce3db;
+}
+
+.stateCard {
+  background: #f4e7c4 !important;
+}
+
+.metadataGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.metadataItem {
+  min-width: 0;
+  padding: .9rem;
+  border: 1px solid rgb(87 91 73 / 13%);
+  border-radius: .85rem;
+  background: rgb(255 253 248 / 66%);
+}
+
+.metadataItem dt {
+  color: #6e715f;
+  font-size: .66rem;
+  font-weight: 760;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.metadataItem dd {
+  margin-top: .4rem;
+  overflow-wrap: anywhere;
+  color: #29312c;
+  font-weight: 680;
+}
+
+.emptyMain {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+}
+
+.emptyCard {
+  width: min(100%, 54rem);
+  margin-inline: auto;
+  padding: clamp(.25rem, 2vw, 1rem);
+  text-align: center;
+}
+
+.emptyCard > div:first-child {
+  justify-items: center;
+}
+
+.emptyTitle {
+  color: #17201d;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  letter-spacing: -.045em;
+}
+
+.emptyOptions {
+  display: grid;
+  gap: .85rem;
+}
+
+.emptyOption {
+  display: flex;
+  min-height: 7rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #d2ddd5;
+  border-radius: 1rem;
+  color: #17201d;
+  background: #fbf8ef;
+  text-align: left;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.emptyOption:hover {
+  border-color: #a9c3b3;
+  background: #edf5ef;
+}
+
+.emptyOptionIcon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: .9rem;
+  color: #365849;
+  background: #c5ded0;
+}
+
+.emptyOption strong,
+.emptyOption span {
+  display: block;
+}
+
+.emptyOption span {
+  margin-top: .25rem;
+  color: #68736d;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.manualOption > div {
+  width: 100%;
+}
+
+.manualOption button {
+  width: 100%;
+  min-height: 7rem;
+  justify-content: flex-start;
+  border: 1px solid #d2ddd5;
+  border-radius: 1rem;
+  padding-inline: 1.25rem;
+  color: #17201d;
+  background: #fffdf8;
+  white-space: normal;
+}
+
+.finePrint {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: #79827d;
+  font-size: .72rem;
+}
+
+@media (min-width: 640px) {
+  .overviewHeader {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .emptyOptions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .actionBar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .utilityActions {
+    padding-top: 0;
+    padding-left: .75rem;
+    border-top: 0;
+    border-left: 1px solid #e6e9e3;
+  }
+
+  .portfolioGrid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(18rem, .7fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .primaryActions a,
+  .utilityActions a {
+    flex: 1 1 calc(50% - .55rem);
+  }
+
+  .metadataGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Architects",
-  description: "AI-powered resume to portfolio platform",
+  title: "Profolio",
+  description: "Turn your experience into a portfolio worth sharing.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

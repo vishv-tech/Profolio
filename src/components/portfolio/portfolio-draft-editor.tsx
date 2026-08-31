@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { savePortfolioDraft } from "@/lib/portfolios/draft-actions";
 import type { PortfolioData } from "@/types/portfolio";
 
+import styles from "./portfolio-draft-editor.module.css";
+
 export function PortfolioDraftEditor({
   initialContent,
   initialUpdatedAt,
@@ -54,15 +56,15 @@ export function PortfolioDraftEditor({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-xl border bg-background/95 p-3 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+    <div className={styles.editor}>
+      <div className={styles.saveBar}>
         <div>
-          <p className="font-medium">Portfolio draft</p>
-          <p className="text-xs text-muted-foreground">
+          <p className={styles.saveTitle}>Portfolio draft</p>
+          <p className={styles.saveStatus}>
             {dirty ? "Unsaved changes" : "All changes saved"}
           </p>
         </div>
-        <Button disabled={isSaving || !dirty} onClick={save} type="button">
+        <Button className={styles.saveButton} disabled={isSaving || !dirty} onClick={save} type="button">
           {isSaving ? (
             <LoaderCircle aria-hidden="true" className="animate-spin" />
           ) : (
@@ -73,7 +75,7 @@ export function PortfolioDraftEditor({
       </div>
 
       <div aria-live="polite">
-        {message ? <p className="rounded-lg border bg-muted/40 p-3 text-sm">{message}</p> : null}
+        {message ? <p className={styles.message}>{message}</p> : null}
       </div>
 
       <ContentImprovementPanel

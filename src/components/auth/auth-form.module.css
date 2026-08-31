@@ -1,0 +1,33 @@
+.success {
+  padding: 1.5rem;
+  border: 1px solid #b8d0c2;
+  border-radius: 1rem;
+  background: #edf5ef;
+  text-align: center;
+}
+
+.successIcon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-inline: auto;
+  place-items: center;
+  border: 1px solid #abc7b6;
+  border-radius: 50%;
+  color: #365849;
+  background: #d8e9de;
+}
+
+.feedbackError {
+  border: 1px solid #e8bcae;
+  border-radius: .8rem;
+  color: #8a3f29;
+  background: #fbebe5;
+}
+
+.feedbackInfo {
+  border: 1px solid #cfd9d1;
+  border-radius: .8rem;
+  color: #3f5149;
+  background: #f3f6f2;
+}

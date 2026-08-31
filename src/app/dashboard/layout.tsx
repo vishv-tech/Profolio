@@ -5,6 +5,8 @@ import { ProtectedHeader } from "@/components/auth/protected-header";
 import { WorkspaceNavigation } from "@/components/workspace/workspace-navigation";
 import { requireActiveUser } from "@/lib/auth/guards";
 
+import styles from "@/components/workspace/workspace.module.css";
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -17,15 +19,16 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-svh flex-col">
+    <div className={`${styles.shell} flex flex-col`}>
       <ProtectedHeader
         destination="/dashboard"
         email={user.email}
         label="User workspace"
+        name={user.profile.full_name || user.profile.username}
       />
-      <div className="grid min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[14rem_minmax(0,1fr)] md:grid-rows-1">
+      <div className={styles.contentGrid}>
         <WorkspaceNavigation />
-        <section className="flex min-w-0">{children}</section>
+        <section className={styles.mainColumn}>{children}</section>
       </div>
     </div>
   );

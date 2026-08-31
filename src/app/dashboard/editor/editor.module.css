@@ -1,0 +1,55 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: clamp(1.4rem, 3vw, 2.25rem);
+  border: 1px solid #dce3db;
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(130deg, rgb(255 253 248 / 97%), rgb(228 239 232 / 86%)),
+    #fffdf8;
+  box-shadow: 0 14px 38px rgb(44 63 54 / 5%);
+}
+
+.headingLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .7rem;
+  margin-top: .45rem;
+}
+
+.title {
+  color: #17201d;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-weight: 720;
+  letter-spacing: -.055em;
+  line-height: 1;
+}
+
+.description {
+  max-width: 44rem;
+  margin-top: .75rem;
+  color: #68736d;
+  line-height: 1.65;
+}
+
+.backButton {
+  min-height: 2.65rem;
+  border-color: #b8cabe;
+  color: #365849;
+  background: #fffdf8;
+}
+
+.messageCard {
+  width: min(100%, 42rem);
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}

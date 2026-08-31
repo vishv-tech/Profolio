@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+import styles from "./review-primitives.module.css";
+
 type TextFieldProps = {
   label: string;
   value: string;
@@ -23,6 +25,13 @@ type TextFieldProps = {
   placeholder?: string;
   type?: "text" | "email" | "tel" | "url";
 };
+
+export function editorSectionId(title: string) {
+  return `editor-section-${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/(^-|-$)/gu, "")}`;
+}
 
 export function ReviewField({
   label,
@@ -34,9 +43,10 @@ export function ReviewField({
   const id = useId();
 
   return (
-    <div className="space-y-2">
+    <div className={styles.field}>
       <Label htmlFor={id}>{label}</Label>
       <Input
+        className={styles.input}
         id={id}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -56,9 +66,10 @@ export function ReviewTextarea({
   const id = useId();
 
   return (
-    <div className="space-y-2">
+    <div className={styles.field}>
       <Label htmlFor={id}>{label}</Label>
       <Textarea
+        className={styles.textarea}
         id={id}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -82,11 +93,11 @@ export function ReviewSelect({
   const id = useId();
 
   return (
-    <div className="space-y-2">
+    <div className={styles.field}>
       <Label htmlFor={id}>{label}</Label>
       <select
         id={id}
-        className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className={styles.select}
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -114,22 +125,22 @@ export function EditorSection({
   children: ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader className="gap-3 border-b sm:grid sm:grid-cols-[1fr_auto]">
+    <Card className={styles.section} id={editorSectionId(title)}>
+      <CardHeader className={`${styles.sectionHeader} border-b sm:grid sm:grid-cols-[1fr_auto]`}>
         <div className="space-y-1">
           <CardTitle>
-            <h2 className="text-lg font-semibold">{title}</h2>
+            <h2 className={styles.sectionTitle}>{title}</h2>
           </CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardDescription className={styles.sectionDescription}>{description}</CardDescription>
         </div>
         {onAdd && actionLabel ? (
-          <Button onClick={onAdd} type="button" variant="outline">
+          <Button className={styles.sectionAction} onClick={onAdd} type="button" variant="outline">
             <Plus aria-hidden="true" />
             {actionLabel}
           </Button>
         ) : null}
       </CardHeader>
-      <CardContent className="space-y-4">{children}</CardContent>
+      <CardContent className={styles.sectionContent}>{children}</CardContent>
     </Card>
   );
 }
@@ -150,12 +161,12 @@ export function EntryCard({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-semibold">
-          {label} {index + 1}
+    <div className={styles.entry}>
+      <div className={styles.entryHeader}>
+        <p className={styles.entryLabel}>
+          {label} {String(index + 1).padStart(2, "0")}
         </p>
-        <div className="flex items-center gap-1">
+        <div className={styles.entryControls}>
           <Button
             aria-label={`Move ${label.toLowerCase()} ${index + 1} up`}
             disabled={index === 0}
@@ -194,7 +205,7 @@ export function EntryCard({
 
 export function EmptySection({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+    <p className={styles.empty}>
       {children}
     </p>
   );
@@ -214,12 +225,13 @@ export function StringListEditor({
   placeholder?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className={styles.field}>
       <Label>{label}</Label>
-      <div className="space-y-2">
+      <div className={styles.list}>
         {values.map((value, index) => (
-          <div className="flex items-center gap-2" key={`${label}-${index}`}>
+          <div className={styles.listRow} key={`${label}-${index}`}>
             <Input
+              className={styles.input}
               aria-label={`${label} ${index + 1}`}
               onChange={(event) => {
                 const next = [...values];
@@ -264,7 +276,7 @@ export function StringListEditor({
         ))}
       </div>
       <Button
-        className={cn(values.length > 0 && "mt-1")}
+        className={cn(styles.addButton, values.length > 0 && "mt-1")}
         onClick={() => onChange([...values, ""])}
         size="sm"
         type="button"

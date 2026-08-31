@@ -3,12 +3,17 @@
 import {
   ArrowUpRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   CircleAlert,
   Eye,
+  LayoutGrid,
   LoaderCircle,
   Palette,
   Rocket,
   Search,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +21,7 @@ import {
   createElement,
   lazy,
   Suspense,
+  useEffect,
   useMemo,
   useState,
   useTransition,
@@ -32,6 +38,7 @@ import type { PortfolioData } from "@/types/portfolio";
 import type { ThemeConfig } from "@/types/theme";
 
 import { selectPortfolioTheme } from "./actions";
+import styles from "./ThemeStore.module.css";
 
 const lazyThemes: ReadonlyMap<
   string,
@@ -43,13 +50,13 @@ const lazyThemes: ReadonlyMap<
   ]),
 );
 
-const CARD_ACCENTS = [
-  "#2563eb",
-  "#7c3aed",
-  "#db2777",
-  "#ea580c",
-  "#059669",
-  "#0891b2",
+const CARD_PALETTES = [
+  { background: "#dce6d7", ink: "#18372e", accent: "#bc6348", paper: "#fffaf0" },
+  { background: "#f0dfce", ink: "#522d25", accent: "#b94f37", paper: "#fffaf2" },
+  { background: "#233d35", ink: "#f5efe3", accent: "#d6876d", paper: "#d7e0cf" },
+  { background: "#d8dde5", ink: "#1e3444", accent: "#335f7a", paper: "#f7f4eb" },
+  { background: "#eee4c9", ink: "#3d3828", accent: "#77814b", paper: "#fffdf7" },
+  { background: "#e7d8df", ink: "#492f3d", accent: "#a24f70", paper: "#fff8f3" },
 ] as const;
 
 class PreviewBoundary extends Component<
@@ -69,14 +76,10 @@ class PreviewBoundary extends Component<
   render() {
     if (this.state.failed) {
       return (
-        <div className="grid min-h-80 place-items-center bg-muted/30 p-8 text-center">
-          <div className="max-w-sm">
-            <CircleAlert className="mx-auto size-7 text-muted-foreground" />
-            <h3 className="mt-3 font-semibold">Preview unavailable</h3>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Choose another theme while this preview is being checked.
-            </p>
-          </div>
+        <div className={styles.previewState}>
+          <CircleAlert aria-hidden="true" />
+          <h3>Preview unavailable</h3>
+          <p>Choose another theme while this preview is being checked.</p>
         </div>
       );
     }
@@ -87,14 +90,10 @@ class PreviewBoundary extends Component<
 
 function PreviewLoading() {
   return (
-    <div className="grid min-h-80 place-items-center bg-muted/30 p-8 text-center">
-      <div>
-        <LoaderCircle className="mx-auto size-7 animate-spin text-muted-foreground" />
-        <p className="mt-3 text-sm font-medium">Preparing your live preview</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Your saved draft stays unchanged.
-        </p>
-      </div>
+    <div className={styles.previewState}>
+      <LoaderCircle aria-hidden="true" className={styles.spinner} />
+      <h3>Preparing your live preview</h3>
+      <p>Your saved draft stays unchanged.</p>
     </div>
   );
 }
@@ -112,7 +111,7 @@ function LiveThemePreview({
 
   if (!Theme) {
     return (
-      <div className="grid min-h-80 place-items-center p-8 text-sm text-muted-foreground">
+      <div className={styles.previewState}>
         Choose a registered theme to preview.
       </div>
     );
@@ -128,29 +127,41 @@ function ThemeCardArtwork({
   entry: ThemeStoreEntry;
   index: number;
 }) {
-  const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
-  const style: CSSProperties = entry.previewImage
-    ? {
-        backgroundImage: `linear-gradient(135deg, rgb(15 23 42 / 0.82), rgb(15 23 42 / 0.25)), url(${JSON.stringify(entry.previewImage)})`,
-        backgroundPosition: "center",
-        backgroundSize: "cover",
-      }
-    : {
-        background: `linear-gradient(135deg, ${accent}, #0f172a)`,
-      };
+  const palette = CARD_PALETTES[index % CARD_PALETTES.length];
+  const previewImage =
+    entry.previewImage ?? `/theme-previews/${entry.layoutKey}.png`;
+  const paletteStyle = {
+    "--art-accent": palette.accent,
+    "--art-background": palette.background,
+    "--art-ink": palette.ink,
+    "--art-paper": palette.paper,
+  } as CSSProperties;
 
   return (
-    <div
-      aria-hidden="true"
-      className="relative flex aspect-[16/7] items-end overflow-hidden rounded-lg p-3 text-white"
-      style={style}
-    >
-      <span className="absolute -right-4 -top-8 text-[7rem] font-black leading-none text-white/10">
-        {entry.name.slice(0, 1)}
-      </span>
-      <span className="relative rounded-full border border-white/30 bg-black/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] backdrop-blur">
-        {entry.category}
-      </span>
+    <div aria-hidden="true" className={styles.cardArtwork} style={paletteStyle}>
+      <div className={styles.fallbackArtwork}>
+        <div className={styles.fallbackNav}>
+          <span>{entry.name.slice(0, 2).toUpperCase()}.</span>
+          <span>Work&nbsp;&nbsp; About</span>
+        </div>
+        <div className={styles.fallbackHero}>
+          <span className={styles.fallbackKicker}>{entry.category}</span>
+          <strong>{entry.name}</strong>
+          <span className={styles.fallbackCopy} />
+          <span className={styles.fallbackCopyShort} />
+        </div>
+        <div className={styles.fallbackTiles}>
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+      <div
+        className={styles.previewImage}
+        style={{ backgroundImage: `url(${JSON.stringify(previewImage)})` }}
+      />
+      <div className={styles.artworkShade} />
+      <span className={styles.artworkCategory}>{entry.category}</span>
     </div>
   );
 }
@@ -182,12 +193,30 @@ export function ThemeStore({
   >({});
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     tone: "error" | "success";
     message: string;
   } | null>(null);
   const [isSaving, startSaving] = useTransition();
   const [isPublishing, startPublishing] = useTransition();
+
+  useEffect(() => {
+    if (!previewOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreviewOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [previewOpen]);
 
   const categories = useMemo(
     () => ["All", ...new Set(catalog.map((entry) => entry.category))],
@@ -220,22 +249,36 @@ export function ThemeStore({
     : null;
   const selectableCount = catalog.filter((entry) => entry.canPersist).length;
   const selectedIsSaved = selected?.layoutKey === savedLayoutKey;
+  const selectedIndex = selected
+    ? catalog.findIndex((entry) => entry.layoutKey === selected.layoutKey)
+    : -1;
 
-  function previewTheme(nextLayoutKey: string) {
+  function setPreviewTheme(nextLayoutKey: string, openPreview: boolean) {
     if (!catalog.some((entry) => entry.layoutKey === nextLayoutKey)) {
       return;
     }
 
     setLayoutKey(nextLayoutKey);
     setFeedback(null);
+    setPreviewOpen(openPreview);
     router.push(
       `/themes?portfolio=${encodeURIComponent(portfolioId)}&theme=${encodeURIComponent(nextLayoutKey)}`,
       { scroll: false },
     );
   }
 
-  function saveTheme() {
-    if (!selected?.canPersist) {
+  function movePreview(direction: -1 | 1) {
+    if (selectedIndex < 0) return;
+
+    const nextIndex =
+      (selectedIndex + direction + catalog.length) % catalog.length;
+    const nextTheme = catalog[nextIndex];
+
+    if (nextTheme) setPreviewTheme(nextTheme.layoutKey, true);
+  }
+
+  function saveTheme(theme: ThemeStoreEntry = selected) {
+    if (!theme?.canPersist) {
       setFeedback({
         tone: "error",
         message:
@@ -244,12 +287,19 @@ export function ThemeStore({
       return;
     }
 
+    setLayoutKey(theme.layoutKey);
     setFeedback(null);
+    if (theme.layoutKey !== layoutKey) {
+      router.push(
+        `/themes?portfolio=${encodeURIComponent(portfolioId)}&theme=${encodeURIComponent(theme.layoutKey)}`,
+        { scroll: false },
+      );
+    }
     startSaving(async () => {
       try {
         const result = await selectPortfolioTheme(
           portfolioId,
-          selected.layoutKey,
+          theme.layoutKey,
         );
 
         if (!result.success) {
@@ -264,7 +314,7 @@ export function ThemeStore({
         setSavedLayoutKey(result.layoutKey);
         setFeedback({
           tone: "success",
-          message: `${selected.name} is saved to this draft.`,
+          message: `${theme.name} is saved to this draft.`,
         });
         router.refresh();
       } catch {
@@ -308,189 +358,251 @@ export function ThemeStore({
   }
 
   return (
-    <main className="flex-1 bg-muted/30 px-3 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto w-full max-w-[1600px]">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <main className={styles.store}>
+      <div className={styles.storeInner}>
+        <header className={styles.storeHero}>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Palette aria-hidden="true" className="size-4" />
-              Production Theme Store
-            </div>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Choose a look for {portfolioTitle}
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Every preview below uses the saved draft for{" "}
-              <strong className="font-medium text-foreground">
-                {portfolioData.personal.fullName || "this portfolio"}
-              </strong>
-              . Changing themes changes presentation, not portfolio content.
+            <p className={styles.eyebrow}>
+              <Palette aria-hidden="true" />
+              Profolio Theme Store
+            </p>
+            <h1>Choose your portfolio personality.</h1>
+            <p className={styles.intro}>
+              Browse thoughtful layouts for <strong>{portfolioTitle}</strong>, then preview your real content before choosing.
             </p>
           </div>
-          <div className="rounded-lg border bg-background px-3 py-2 text-xs text-muted-foreground">
-            {catalog.length} coded themes · {selectableCount} ready to save
+          <div className={styles.catalogSummary}>
+            <Sparkles aria-hidden="true" />
+            <span>
+              <strong>{catalog.length} themes</strong>
+              {selectableCount} ready to use
+            </span>
           </div>
-        </div>
+        </header>
 
         {metadataReadFailed || selectableCount < catalog.length ? (
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-            <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <p className="leading-6">
+          <div className={styles.notice}>
+            <CircleAlert aria-hidden="true" />
+            <p>
               {metadataReadFailed
-                ? "Theme database metadata could not be loaded. Previews remain available, but saving is temporarily disabled."
-                : `${catalog.length - selectableCount} coded themes are preview-only until matching active theme metadata is added to the database. No fallback or mismatched theme ID will be saved.`}
+                ? "Theme metadata could not be loaded. You can still explore every preview, but saving is temporarily unavailable."
+                : `${catalog.length - selectableCount} themes are available to preview while their store metadata is being prepared.`}
             </p>
           </div>
         ) : null}
 
-        <div className="grid gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]">
-          <aside className="rounded-xl border bg-background p-3 shadow-sm sm:p-4">
-            <div className="space-y-3">
-              <label className="relative block">
-                <span className="sr-only">Search themes</span>
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <input
-                  className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, career, or style"
-                  type="search"
-                  value={query}
-                />
-              </label>
-              <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Theme categories">
-                {categories.map((value) => (
+        <section aria-label="Theme filters" className={styles.filters}>
+          <label className={styles.searchBox}>
+            <span className="sr-only">Search themes</span>
+            <Search aria-hidden="true" />
+            <input
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search themes, careers, or styles"
+              type="search"
+              value={query}
+            />
+          </label>
+          <div aria-label="Theme categories" className={styles.categories}>
+            {categories.map((value) => (
+              <button
+                aria-pressed={category === value}
+                className={cn(
+                  styles.categoryChip,
+                  category === value && styles.categoryChipActive,
+                )}
+                key={value}
+                onClick={() => setCategory(value)}
+                type="button"
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          <span className={styles.resultCount}>
+            <LayoutGrid aria-hidden="true" />
+            {filteredCatalog.length} results
+          </span>
+        </section>
+
+        <div aria-live="polite">
+          {feedback ? (
+            <p
+              className={cn(
+                styles.feedback,
+                feedback.tone === "success"
+                  ? styles.feedbackSuccess
+                  : styles.feedbackError,
+              )}
+            >
+              {feedback.message}
+            </p>
+          ) : null}
+        </div>
+
+        {filteredCatalog.length ? (
+          <section aria-label="Portfolio themes" className={styles.themeGrid}>
+            {filteredCatalog.map((entry) => {
+              const catalogIndex = catalog.findIndex(
+                (theme) => theme.layoutKey === entry.layoutKey,
+              );
+              const isSaved = entry.layoutKey === savedLayoutKey;
+
+              return (
+                <article className={styles.themeCard} key={entry.layoutKey}>
                   <button
-                    aria-pressed={category === value}
-                    className={cn(
-                      "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                      category === value
-                        ? "border-foreground bg-foreground text-background"
-                        : "bg-background hover:bg-muted",
-                    )}
-                    key={value}
-                    onClick={() => setCategory(value)}
+                    aria-label={`Preview ${entry.name}`}
+                    className={styles.artworkButton}
+                    onClick={() => setPreviewTheme(entry.layoutKey, true)}
                     type="button"
                   >
-                    {value}
+                    <ThemeCardArtwork entry={entry} index={catalogIndex} />
+                    <span className={styles.hoverPreview}>
+                      <Eye aria-hidden="true" />
+                      Preview theme
+                    </span>
                   </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Showing {filteredCatalog.length} of {catalog.length}
-              </p>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:max-h-[calc(100svh-15rem)] xl:grid-cols-1 xl:overflow-y-auto xl:pr-1">
-              {filteredCatalog.map((entry, index) => {
-                const isSelected = entry.layoutKey === selected.layoutKey;
-                const isSaved = entry.layoutKey === savedLayoutKey;
-
-                return (
-                  <article
-                    className={cn(
-                      "rounded-xl border p-2.5 transition",
-                      isSelected
-                        ? "border-foreground bg-muted/50 shadow-sm"
-                        : "bg-background hover:border-foreground/30",
-                    )}
-                    key={entry.layoutKey}
-                  >
-                    <ThemeCardArtwork entry={entry} index={index} />
-                    <div className="px-1 pb-1 pt-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h2 className="font-semibold leading-5">{entry.name}</h2>
-                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                            {entry.description}
-                          </p>
-                        </div>
-                        {isSaved ? (
-                          <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-800">
-                            <Check aria-hidden="true" className="size-3" />
-                            Saved
-                          </span>
-                        ) : null}
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardTitleRow}>
+                      <div>
+                        <h2>{entry.name}</h2>
+                        <p>{entry.description}</p>
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {entry.styleTags.slice(0, 3).map((tag) => (
-                          <span
-                            className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                            key={tag}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                      {isSaved ? (
+                        <span className={styles.savedBadge}>
+                          <Check aria-hidden="true" />
+                          Saved
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className={styles.tags}>
+                      {entry.styleTags.slice(0, 3).map((tag) => (
+                        <span key={tag}>{tag}</span>
+                      ))}
+                    </div>
+                    <div className={styles.cardActions}>
                       <button
-                        className="mt-3 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border text-xs font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                        onClick={() => previewTheme(entry.layoutKey)}
+                        className={styles.previewButton}
+                        onClick={() => setPreviewTheme(entry.layoutKey, true)}
                         type="button"
                       >
-                        <Eye aria-hidden="true" className="size-3.5" />
-                        {isSelected ? "Previewing" : "Preview"}
+                        <Eye aria-hidden="true" />
+                        Preview
+                      </button>
+                      <button
+                        className={styles.useButton}
+                        disabled={isSaving || !entry.canPersist}
+                        onClick={() => saveTheme(entry)}
+                        type="button"
+                      >
+                        {isSaving && entry.layoutKey === selected.layoutKey ? (
+                          <LoaderCircle aria-hidden="true" className={styles.spinner} />
+                        ) : (
+                          <Check aria-hidden="true" />
+                        )}
+                        {isSaved ? "Theme selected" : "Use this theme"}
                       </button>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        ) : (
+          <div className={styles.emptyState}>
+            <Search aria-hidden="true" />
+            <h2>No themes found</h2>
+            <p>Try a broader search or choose another category.</p>
+            <button
+              onClick={() => {
+                setQuery("");
+                setCategory("All");
+              }}
+              type="button"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+      </div>
 
-            {filteredCatalog.length === 0 ? (
-              <div className="py-10 text-center text-sm text-muted-foreground">
-                No themes match these filters.
+      {previewOpen ? (
+        <div
+          aria-labelledby="theme-preview-title"
+          aria-modal="true"
+          className={styles.previewOverlay}
+          role="dialog"
+        >
+          <button
+            aria-label="Close theme preview"
+            className={styles.overlayBackdrop}
+            onClick={() => setPreviewOpen(false)}
+            type="button"
+          />
+          <section className={styles.previewDialog}>
+            <header className={styles.previewHeader}>
+              <div className={styles.previewIdentity}>
+                <p>Live portfolio preview</p>
+                <h2 id="theme-preview-title">{selected.name}</h2>
+                <span>{selected.category} · Your saved portfolio content</span>
               </div>
-            ) : null}
-          </aside>
-
-          <section className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm">
-            <header className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Live draft preview
-                </p>
-                <h2 className="mt-1 text-lg font-semibold">{selected.name}</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {selected.layoutKey}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
+              <div className={styles.previewActions}>
                 <button
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/80 disabled:pointer-events-none disabled:opacity-50"
+                  aria-label="Previous theme"
+                  className={styles.iconButton}
+                  onClick={() => movePreview(-1)}
+                  type="button"
+                >
+                  <ChevronLeft aria-hidden="true" />
+                </button>
+                <button
+                  aria-label="Next theme"
+                  className={styles.iconButton}
+                  onClick={() => movePreview(1)}
+                  type="button"
+                >
+                  <ChevronRight aria-hidden="true" />
+                </button>
+                <button
+                  className={styles.modalUseButton}
                   disabled={isSaving || !selected.canPersist}
-                  onClick={saveTheme}
+                  onClick={() => saveTheme(selected)}
                   type="button"
                 >
                   {isSaving ? (
-                    <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+                    <LoaderCircle aria-hidden="true" className={styles.spinner} />
                   ) : (
-                    <Check aria-hidden="true" className="size-4" />
+                    <Check aria-hidden="true" />
                   )}
-                  {selectedIsSaved ? "Theme saved" : "Use this theme"}
+                  {selectedIsSaved ? "Theme selected" : "Use this theme"}
                 </button>
                 <button
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                  className={styles.publishButton}
                   disabled={!selectedIsSaved || isPublishing}
                   onClick={publishSavedPortfolio}
                   type="button"
                 >
                   {isPublishing ? (
-                    <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+                    <LoaderCircle aria-hidden="true" className={styles.spinner} />
                   ) : (
-                    <Rocket aria-hidden="true" className="size-4" />
+                    <Rocket aria-hidden="true" />
                   )}
-                  Publish saved draft
-                  <ArrowUpRight aria-hidden="true" className="size-4" />
+                  Publish
+                  <ArrowUpRight aria-hidden="true" />
+                </button>
+                <button
+                  aria-label="Close theme preview"
+                  className={styles.closeButton}
+                  onClick={() => setPreviewOpen(false)}
+                  type="button"
+                >
+                  <X aria-hidden="true" />
                 </button>
               </div>
             </header>
 
             {!selected.canPersist ? (
-              <p className="border-b bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-950">
-                Preview only: this coded layout has no unique active database
-                theme record yet.
+              <p className={styles.previewOnlyNotice}>
+                Preview only — this layout is waiting for its active store metadata before it can be selected.
               </p>
             ) : null}
 
@@ -498,10 +610,10 @@ export function ThemeStore({
               {feedback ? (
                 <p
                   className={cn(
-                    "border-b px-4 py-2 text-sm",
+                    styles.modalFeedback,
                     feedback.tone === "success"
-                      ? "bg-emerald-50 text-emerald-900"
-                      : "bg-red-50 text-red-900",
+                      ? styles.feedbackSuccess
+                      : styles.feedbackError,
                   )}
                 >
                   {feedback.message}
@@ -509,8 +621,8 @@ export function ThemeStore({
               ) : null}
             </div>
 
-            <div className="overflow-x-auto bg-slate-100 p-1 sm:p-2">
-              <div className="mx-auto min-w-0 overflow-hidden rounded-lg bg-white shadow-sm">
+            <div className={styles.previewViewport}>
+              <div className={styles.previewCanvas}>
                 <PreviewBoundary key={selected.layoutKey}>
                   <Suspense fallback={<PreviewLoading />}>
                     <LiveThemePreview
@@ -522,9 +634,14 @@ export function ThemeStore({
                 </PreviewBoundary>
               </div>
             </div>
+            <footer className={styles.previewFooter}>
+              <span>{selectedIndex + 1} / {catalog.length}</span>
+              <p>Previewing with {portfolioData.personal.fullName || "your portfolio"}&apos;s real saved content.</p>
+              <button onClick={() => setPreviewOpen(false)} type="button">Close preview</button>
+            </footer>
           </section>
         </div>
-      </div>
+      ) : null}
     </main>
   );
 }

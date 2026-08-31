@@ -1,0 +1,70 @@
+.page {
+  --status-ink: #17201d;
+  --status-muted: #68736d;
+  --status-sage: #c5ded0;
+  --status-clay: #d9653b;
+  --status-line: #dce3db;
+  display: flex;
+  min-height: 100svh;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--status-ink);
+  background:
+    radial-gradient(circle at 50% 15%, rgb(197 222 208 / 44%), transparent 24rem),
+    #f7f5ef;
+}
+
+.page :global([data-slot="card"]) {
+  width: min(100%, 31rem);
+  border: 1px solid var(--status-line);
+  border-radius: 1.25rem;
+  background: #fffdf8;
+  box-shadow: 0 24px 60px rgb(39 58 49 / 8%);
+}
+
+.page :global([data-slot="card-description"]) {
+  color: var(--status-muted);
+}
+
+.page :global([data-slot="button"]) {
+  min-height: 2.7rem;
+  border-radius: .8rem;
+}
+
+.page :global(.bg-primary) {
+  color: #fffdf8;
+  background: var(--status-ink);
+}
+
+.icon,
+.warningIcon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-inline: auto;
+  place-items: center;
+  border-radius: 1rem;
+}
+
+.icon {
+  border: 1px solid #b7cebf;
+  color: #365849;
+  background: #e4efe8;
+}
+
+.warningIcon {
+  border: 1px solid #e7b7a8;
+  color: #9b4328;
+  background: #f9e8e1;
+}
+
+.placeholderPage {
+  min-height: auto;
+  background: transparent;
+}
+
+.placeholderPage :global([data-slot="card"]) {
+  box-shadow: 0 12px 32px rgb(39 58 49 / 5%);
+}

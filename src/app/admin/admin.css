@@ -1463,3 +1463,284 @@
   .admin-nav__link,
   .admin-loading { transition: none; animation: none; }
 }
+
+/* Profolio application presentation layer. Scoped to the existing admin shell. */
+.admin-shell {
+  --admin-blue: #567565;
+  --admin-ink: #17201d;
+  --admin-muted: #68736d;
+  --admin-line: #dce3db;
+  --admin-surface: #fffdf8;
+  --admin-canvas: #f7f5ef;
+  color: var(--admin-ink);
+  background:
+    radial-gradient(circle at 90% 0%, rgb(197 222 208 / 30%), transparent 26rem),
+    var(--admin-canvas);
+}
+
+.admin-sidebar {
+  color: var(--admin-ink);
+  border-right: 1px solid var(--admin-line);
+  background: #f9f4e8;
+}
+
+.admin-brand {
+  border-color: var(--admin-line);
+  color: var(--admin-ink);
+  letter-spacing: -.35px;
+}
+
+.admin-brand__mark span {
+  border-color: #567565;
+  background: #c5ded0;
+}
+
+.admin-nav__link {
+  min-height: 46px;
+  color: #607068;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.admin-nav__link:hover {
+  color: var(--admin-ink);
+  background: rgb(255 253 248 / 75%);
+  transform: none;
+}
+
+.admin-nav__link.is-active {
+  color: #294a3d;
+  border-color: #b8d0c2;
+  background: #c5ded0;
+  box-shadow: none;
+}
+
+.admin-sidebar__footer {
+  border-color: var(--admin-line);
+}
+
+.admin-identity small {
+  color: #7a847f;
+}
+
+.admin-avatar {
+  border-color: #adc7b8;
+  color: #294a3d;
+  background: #dbeadf;
+}
+
+.admin-avatar--fallback {
+  background: linear-gradient(135deg, #e8f1ea, #c5ded0);
+}
+
+.admin-signout {
+  border-color: #c7d3ca;
+  color: #405148;
+  background: #fffdf8;
+}
+
+.admin-signout:hover {
+  color: var(--admin-ink);
+  background: #edf5ef;
+}
+
+.admin-topbar {
+  border-color: var(--admin-line);
+  background: rgb(255 253 248 / 93%);
+}
+
+.admin-search {
+  border-color: #cfd9d1;
+  border-radius: 12px;
+  background: #fffdf8;
+}
+
+.admin-search:focus-within {
+  border-color: #567565;
+  box-shadow: 0 0 0 3px rgb(86 117 101 / 16%);
+}
+
+.admin-search svg,
+.admin-topbar__identity {
+  color: #52635b;
+}
+
+.admin-page {
+  padding-top: clamp(24px, 3vw, 42px);
+}
+
+.admin-page__heading h1 {
+  color: var(--admin-ink);
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 720;
+  letter-spacing: -1.6px;
+}
+
+.admin-page__heading p {
+  color: var(--admin-muted);
+  line-height: 1.65;
+}
+
+.admin-button {
+  min-height: 43px;
+  border-radius: 11px;
+}
+
+.admin-button--primary {
+  border-color: var(--admin-ink);
+  color: #fffdf8 !important;
+  background: var(--admin-ink);
+  box-shadow: none;
+}
+
+.admin-button--secondary {
+  border-color: #b8cabe;
+  color: #365849;
+  background: #fffdf8;
+}
+
+.admin-card {
+  border-color: var(--admin-line);
+  border-radius: 16px;
+  background: var(--admin-surface);
+  box-shadow: 0 10px 30px rgb(44 63 54 / 5%);
+}
+
+.admin-stat__copy small,
+.admin-stat__copy em,
+.admin-card p,
+.admin-card small {
+  color: var(--admin-muted);
+}
+
+.admin-stat__copy strong,
+.admin-card h2,
+.admin-card h3,
+.admin-card strong {
+  color: var(--admin-ink);
+}
+
+.admin-stat__icon {
+  border-radius: 15px;
+}
+
+.admin-stat__icon--blue,
+.admin-stat__icon--green,
+.admin-stat__icon--cyan {
+  color: #365849;
+  background: #e4efe8;
+}
+
+.admin-stat__icon--purple {
+  color: #765746;
+  background: #eee3dc;
+}
+
+.admin-stat__icon--orange {
+  color: #9a5a31;
+  background: #f4e7c4;
+}
+
+.admin-stat__icon--red {
+  color: #a34b30;
+  background: #fbebe5;
+}
+
+.admin-manager__filters,
+.admin-filter-form,
+.admin-detail,
+.admin-analytics-note {
+  border-color: var(--admin-line);
+  background: #fbf8ef;
+}
+
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea {
+  border-color: #cfd9d1;
+  border-radius: 10px;
+  color: var(--admin-ink);
+  background: #fffdf8;
+}
+
+.admin-shell input:focus,
+.admin-shell select:focus,
+.admin-shell textarea:focus {
+  border-color: #567565;
+  outline: 3px solid rgb(86 117 101 / 15%);
+}
+
+.admin-table th,
+.admin-table td,
+.admin-list-row,
+.admin-search-result li,
+.admin-search-result > header {
+  border-color: #e4e8e2;
+}
+
+.admin-table th,
+.admin-table thead,
+.admin-manager__header,
+.admin-card__header {
+  color: #58665f;
+  background: #faf7ef;
+}
+
+.admin-status--active,
+.admin-status--published,
+.admin-status--completed,
+.admin-status--current {
+  color: #365849;
+  background: #e4efe8;
+}
+
+.admin-status--suspended,
+.admin-status--failed,
+.admin-status--inactive {
+  color: #9b4328;
+  background: #fbebe5;
+}
+
+.admin-status--draft,
+.admin-status--processing,
+.admin-status--uploaded,
+.admin-status--historical {
+  color: #7b5b35;
+  background: #f4e7c4;
+}
+
+.admin-pagination nav a.is-current {
+  color: #fffdf8;
+  border-color: #567565;
+  background: #567565;
+}
+
+.admin-search-result header svg,
+.admin-analytics-note svg {
+  color: #567565;
+}
+
+.admin-loading {
+  background: linear-gradient(90deg, #ece9df 25%, #fffdf8 50%, #e4efe8 75%);
+  background-size: 200% 100%;
+}
+
+.admin-error > svg {
+  color: #d9653b;
+}
+
+@media (max-width: 940px) {
+  .admin-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--admin-line);
+  }
+
+  .admin-nav {
+    scrollbar-width: none;
+  }
+
+  .admin-nav::-webkit-scrollbar {
+    display: none;
+  }
+}

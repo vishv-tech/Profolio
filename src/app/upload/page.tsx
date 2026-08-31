@@ -3,6 +3,8 @@ import { ResumeWorkflow } from "@/components/upload/resume-workflow";
 import { requireActiveUser } from "@/lib/auth/guards";
 import { getResumeWorkflowState } from "@/lib/resumes/queries";
 
+import styles from "@/components/workspace/workspace.module.css";
+
 export const maxDuration = 300;
 
 type UploadPageProps = {
@@ -19,13 +21,15 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
     : null;
 
   return (
-    <div className="min-h-svh bg-muted/30">
+    <div className={`${styles.shell} flex min-h-svh flex-col`}>
       <ProtectedHeader
         destination={user.profile.role === "admin" ? "/admin" : "/dashboard"}
         email={user.email}
         label={user.profile.role === "admin" ? "Admin workspace" : "User workspace"}
+        name={user.profile.full_name || user.profile.username}
       />
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      <main className={`${styles.page} ${styles.applicationSurface}`}>
+        <div className={styles.narrowContainer}>
         <ResumeWorkflow
           hasRequestedResume={Boolean(params.resume)}
           initialState={initialState}
@@ -35,6 +39,7 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
               : "new-resume"
           }
         />
+        </div>
       </main>
     </div>
   );

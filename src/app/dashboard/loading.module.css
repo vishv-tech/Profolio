@@ -1,0 +1,69 @@
+.loading {
+  min-width: 0;
+  flex: 1;
+  padding: clamp(1.5rem, 3vw, 2.75rem) clamp(1rem, 3vw, 2.25rem);
+  background: #f7f5ef;
+}
+
+.container {
+  display: grid;
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  gap: 1rem;
+}
+
+.hero,
+.card,
+.line,
+.shortLine {
+  overflow: hidden;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #ece9df 25%, #fffdf8 50%, #e4efe8 75%);
+  background-size: 200% 100%;
+  animation: workspace-shimmer 1.5s linear infinite;
+}
+
+.hero {
+  height: 12rem;
+  border: 1px solid #dce3db;
+  border-radius: 1.35rem;
+}
+
+.line {
+  width: 14rem;
+  height: .8rem;
+}
+
+.shortLine {
+  width: 8rem;
+  height: .65rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  height: 17rem;
+  border: 1px solid #dce3db;
+}
+
+@keyframes workspace-shimmer {
+  to { background-position: -200% 0; }
+}
+
+@media (min-width: 800px) {
+  .grid {
+    grid-template-columns: 1.25fr .75fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .card,
+  .line,
+  .shortLine {
+    animation: none;
+  }
+}

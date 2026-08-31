@@ -2,13 +2,7 @@ import { FileText } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import styles from "./auth-page-shell.module.css";
 
 type AuthPageShellProps = {
   title: string;
@@ -24,36 +18,54 @@ export function AuthPageShell({
   footer,
 }: AuthPageShellProps) {
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/30 px-4 py-12 sm:px-6">
-      <Card className="w-full max-w-md shadow-sm">
-        <CardHeader className="gap-5">
+    <main className={styles.page}>
+      <div className={styles.frame}>
+        <aside className={styles.story} aria-label="About Profolio">
           <Link
-            className="flex w-fit items-center gap-2 rounded-md text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className={styles.storyBrand}
             href="/"
           >
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <span className={styles.brandMark}>
               <FileText aria-hidden="true" className="size-4" />
             </span>
-            The Architects
+            Profolio
           </Link>
-          <div className="space-y-2">
-            <CardTitle>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                {title}
-              </h1>
-            </CardTitle>
-            <CardDescription className="text-base leading-6">
-              {description}
-            </CardDescription>
+          <div className={styles.storyCopy}>
+            <p className={styles.eyebrow}>Your work, thoughtfully presented</p>
+            <p className={styles.storyTitle}>From resume to remarkable.</p>
+            <p className={styles.storyText}>
+              Shape your experience into a portfolio that feels personal,
+              polished, and ready to share.
+            </p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {children}
-          <div className="text-center text-sm text-muted-foreground">
-            {footer}
+          <div className={styles.portfolioMotif} aria-hidden="true">
+            <div className={styles.resumeCard}>
+              <div className={styles.resumeHeader}>
+                <span className={styles.resumeAvatar} />
+                <span className={styles.lineStack}><span /><span /></span>
+              </div>
+              <span className={styles.resumeLines}><span /><span /><span /><span /></span>
+            </div>
+            <div className={styles.portfolioCard}><span /><span /><span /></div>
           </div>
-        </CardContent>
-      </Card>
+        </aside>
+
+        <section className={styles.formPanel}>
+          <div className={styles.formInner}>
+            <Link className={styles.mobileBrand} href="/">
+              <span className={styles.brandMark}>
+                <FileText aria-hidden="true" className="size-4" />
+              </span>
+              Profolio
+            </Link>
+            <p className={styles.formEyebrow}>Welcome to Profolio</p>
+            <h1 className={styles.formTitle}>{title}</h1>
+            <p className={styles.formDescription}>{description}</p>
+            <div className={styles.formContent}>{children}</div>
+            <div className={styles.footer}>{footer}</div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

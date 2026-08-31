@@ -1,38 +1,61 @@
-import { ShieldCheck } from "lucide-react";
+import { FileText } from "lucide-react";
 import Link from "next/link";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+
+import styles from "@/components/workspace/workspace.module.css";
 
 type ProtectedHeaderProps = {
   destination: string;
   label: string;
   email: string | null;
+  name?: string | null;
 };
+
+function initials(value: string) {
+  return (
+    value
+      .trim()
+      .split(/\s+/u)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "PF"
+  );
+}
 
 export function ProtectedHeader({
   destination,
   label,
   email,
+  name,
 }: ProtectedHeaderProps) {
+  const displayName = name?.trim() || email?.split("@")[0] || "Account";
+
   return (
-    <header className="flex min-h-16 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
+    <header className={styles.topbar}>
       <Link
-        className="flex min-w-0 items-center gap-3 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className={styles.brand}
         href={destination}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <ShieldCheck aria-hidden="true" className="size-4" />
+        <span className={styles.brandMark}>
+          <FileText aria-hidden="true" className="size-4" />
         </span>
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold">{label}</span>
-          {email ? (
-            <span className="block truncate text-xs text-muted-foreground">
-              {email}
-            </span>
-          ) : null}
+        <span>
+          <span className={styles.brandName}>Profolio</span>
+          <span className={styles.brandContext}>{label}</span>
         </span>
       </Link>
-      <LogoutButton />
+      <div className={styles.account}>
+        <div className={styles.identity} aria-label={`Signed in as ${displayName}`}>
+          <span className={styles.avatar} aria-hidden="true">
+            {initials(displayName)}
+          </span>
+          <span className={styles.identityName}>{displayName}</span>
+        </div>
+        <div className={styles.signout}>
+          <LogoutButton />
+        </div>
+      </div>
     </header>
   );
 }

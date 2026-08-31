@@ -23,6 +23,9 @@ import {
 import { requireActiveUser } from "@/lib/auth/guards";
 import { getOwnedPortfolioDeploymentOverview } from "@/lib/portfolios/deployment-overview";
 
+import workspaceStyles from "@/components/workspace/workspace.module.css";
+import styles from "./deployments.module.css";
+
 type DeploymentsPageProps = {
   searchParams: Promise<{
     portfolio?: string | string[];
@@ -49,10 +52,10 @@ function formatTimestamp(value: string): string {
 
 function EmptyDeploymentOverview() {
   return (
-    <main className="flex flex-1 bg-muted/30 px-4 py-10 sm:px-6">
-      <Card className="mx-auto h-fit w-full max-w-2xl">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface} ${styles.emptyMain}`}>
+      <Card className={styles.emptyCard}>
         <CardHeader>
-          <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+          <div className={workspaceStyles.emptyIcon}>
             <Rocket aria-hidden="true" className="size-5" />
           </div>
           <CardTitle>
@@ -96,11 +99,11 @@ export default async function DeploymentsPage({
 
   if (result.status === "unpublished") {
     return (
-      <main className="flex flex-1 bg-muted/30 px-4 py-10 sm:px-6">
-        <Card className="mx-auto h-fit w-full max-w-2xl">
+      <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface} ${styles.emptyMain}`}>
+        <Card className={styles.emptyCard}>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+              <div className={workspaceStyles.emptyIcon}>
                 <Rocket aria-hidden="true" className="size-5" />
               </div>
               <Badge variant="secondary">
@@ -140,11 +143,11 @@ export default async function DeploymentsPage({
   const showPublishedSuccess = searchValue(params.published) === "1";
 
   return (
-    <main className="flex flex-1 bg-muted/30 px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto w-full max-w-5xl space-y-5">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface}`}>
+      <div className={`${workspaceStyles.narrowContainer} space-y-5`}>
         {showPublishedSuccess ? (
           <div
-            className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950"
+            className={styles.success}
             role="status"
           >
             <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
@@ -158,26 +161,24 @@ export default async function DeploymentsPage({
           </div>
         ) : null}
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <header className={styles.header}>
+          <div>
+          <div className={styles.headerLabel}>
             <Rocket aria-hidden="true" className="size-4" />
             Current deployment
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              <h1 className={styles.title}>
                 {overview.portfolio.title}
               </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className={styles.description}>
                 Published portfolio and deployment information
               </p>
-            </div>
-            <Badge className="bg-emerald-600 text-white">Ready</Badge>
           </div>
-        </div>
+            <Badge className="bg-emerald-600 text-white">Ready</Badge>
+        </header>
 
-        <Card>
-          <CardHeader className="border-b">
+        <Card className={styles.deploymentCard}>
+          <CardHeader className={`${styles.cardHeader} border-b`}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle>
@@ -193,36 +194,36 @@ export default async function DeploymentsPage({
           <CardContent className="space-y-6">
             <DeploymentActions publicPath={overview.portfolio.publicPath} />
 
-            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <dt className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <dl className={styles.stats}>
+              <div className={styles.stat}>
+                <dt>
                   <Layers3 aria-hidden="true" className="size-3.5" />
                   Version
                 </dt>
-                <dd className="mt-2 font-semibold">
+                <dd>
                   Version {overview.deployment.version}
                 </dd>
               </div>
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <dt className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <div className={styles.stat}>
+                <dt>
                   <Palette aria-hidden="true" className="size-3.5" />
                   Theme
                 </dt>
-                <dd className="mt-2 font-semibold">{overview.theme.name}</dd>
+                <dd>{overview.theme.name}</dd>
               </div>
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <dt className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <div className={styles.stat}>
+                <dt>
                   <Eye aria-hidden="true" className="size-3.5" />
                   Visibility
                 </dt>
-                <dd className="mt-2 font-semibold">Public</dd>
+                <dd>Public</dd>
               </div>
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <dt className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <div className={styles.stat}>
+                <dt>
                   <CalendarClock aria-hidden="true" className="size-3.5" />
                   Published
                 </dt>
-                <dd className="mt-2 font-semibold">
+                <dd>
                   <time dateTime={overview.portfolio.publishedAt}>
                     {formatTimestamp(overview.portfolio.publishedAt)}
                   </time>
@@ -230,7 +231,7 @@ export default async function DeploymentsPage({
               </div>
             </dl>
 
-            <div className="flex flex-col gap-3 border-t pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div className={styles.footer}>
               <p>
                 Deployment created{" "}
                 <time dateTime={overview.deployment.createdAt}>

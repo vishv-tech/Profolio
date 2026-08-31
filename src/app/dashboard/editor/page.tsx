@@ -14,6 +14,9 @@ import {
 import { requireActiveUser } from "@/lib/auth/guards";
 import { getPortfolioWorkspace } from "@/lib/portfolios/workspace";
 
+import workspaceStyles from "@/components/workspace/workspace.module.css";
+import styles from "./editor.module.css";
+
 type EditorPageProps = {
   searchParams: Promise<{ portfolio?: string | string[] }>;
 };
@@ -26,8 +29,8 @@ function EditorMessage({
   title: string;
 }) {
   return (
-    <main className="flex flex-1 bg-muted/30 px-4 py-10 sm:px-6">
-      <Card className="mx-auto h-fit w-full max-w-2xl">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface}`}>
+      <Card className={styles.messageCard}>
         <CardHeader>
           <CardTitle><h1>{title}</h1></CardTitle>
           <CardDescription className="leading-6">{description}</CardDescription>
@@ -76,29 +79,28 @@ export default async function EditorPage({ searchParams }: EditorPageProps) {
 
   const { portfolio } = result;
   return (
-    <main className="min-w-0 flex-1 bg-muted/30 px-4 py-8 sm:px-6">
-      <div className="mx-auto w-full max-w-5xl space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <main className={`${workspaceStyles.page} ${workspaceStyles.applicationSurface}`}>
+      <div className={`${workspaceStyles.narrowContainer} space-y-6`}>
+        <header className={styles.header}>
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <div className={workspaceStyles.eyebrow}>
               <Pencil aria-hidden="true" className="size-4" />
-              Saved draft editor
+              Portfolio editor
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight">
+            <div className={styles.headingLine}>
+              <h1 className={styles.title}>
                 {portfolio.title}
               </h1>
               <Badge className="capitalize" variant="secondary">
                 {portfolio.status}
               </Badge>
             </div>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Manual and accepted AI edits update only the draft. The public
-              snapshot changes only after you republish.
+            <p className={styles.description}>
+              Shape each section of your draft. Your public portfolio changes only when you republish.
             </p>
           </div>
           <Link
-            className={buttonVariants({ variant: "outline" })}
+            className={`${buttonVariants({ variant: "outline" })} ${styles.backButton}`}
             href={`/dashboard?portfolio=${encodeURIComponent(portfolio.id)}`}
           >
             <ArrowLeft aria-hidden="true" />

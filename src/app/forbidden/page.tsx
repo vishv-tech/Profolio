@@ -10,12 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import styles from "@/components/shared/status-page.module.css";
+
 export default function ForbiddenPage() {
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/30 px-4 py-12 sm:px-6">
-      <Card className="w-full max-w-md">
+    <main className={styles.page}>
+      <Card>
         <CardHeader className="gap-4 text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <div className={styles.warningIcon}>
             <ShieldX aria-hidden="true" className="size-5" />
           </div>
           <div className="space-y-2">

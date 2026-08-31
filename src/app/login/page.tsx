@@ -9,10 +9,10 @@ export default async function LoginPage() {
 
   return (
     <AuthPageShell
-      description="Use your email and password to continue to your workspace."
+      description="Continue building and sharing your professional story."
       footer={
         <>
-          New to The Architects?{" "}
+          New to Profolio?{" "}
           <Link
             className="font-medium text-foreground underline-offset-4 hover:underline"
             href="/signup"

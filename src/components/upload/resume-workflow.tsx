@@ -42,6 +42,8 @@ import type { ResumeWorkflowState } from "@/lib/resumes/types";
 import { cn } from "@/lib/utils";
 import type { PortfolioData } from "@/types/portfolio";
 
+import styles from "./resume-workflow.module.css";
+
 type Feedback = {
   tone: "error" | "info" | "success";
   message: string;
@@ -283,32 +285,45 @@ export function ResumeWorkflow({
   }
 
   return (
-    <div className="space-y-6">
+    <div className={styles.workflow}>
+      <header className={styles.intro}>
+        <p className={styles.eyebrow}>
+          {resume?.status === "completed" ? "Review" : "Let’s begin"}
+        </p>
+        <h1 className={styles.title}>
+          {resume?.status === "completed"
+            ? "Review your portfolio details."
+            : resume
+              ? "Preparing your portfolio."
+              : "Turn your resume into something worth sharing."}
+        </h1>
+        <p className={styles.description}>
+          {resume?.status === "completed"
+            ? "Make any changes before choosing your design."
+            : "Upload your resume and we’ll prepare it for your portfolio."}
+        </p>
+      </header>
       <WorkflowSteps status={resume?.status ?? null} />
       {feedback ? <FeedbackMessage feedback={feedback} /> : null}
 
       {!resume ? (
-        <Card>
+        <Card className={styles.uploadCard}>
           <CardHeader>
             <CardTitle>
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h2 className={styles.uploadHeading}>
                 Upload your resume
-              </h1>
+              </h2>
             </CardTitle>
             <CardDescription className="max-w-2xl text-base leading-7">
-              Upload one PDF up to 10 MB. It stays in your private Supabase
-              Storage folder while Gemini converts it into editable portfolio
-              data.
+              Choose one PDF up to 10 MB. We&apos;ll organize it into editable portfolio details for you to review.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleUpload}>
             <CardContent className="space-y-5">
               <div
                 className={cn(
-                  "rounded-xl border-2 border-dashed p-6 text-center transition-colors sm:p-10",
-                  isDragging
-                    ? "border-foreground bg-muted"
-                    : "border-border bg-muted/20",
+                  styles.dropzone,
+                  isDragging && styles.dropzoneActive,
                 )}
                 onDragEnter={(event) => {
                   event.preventDefault();
@@ -318,17 +333,16 @@ export function ResumeWorkflow({
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={handleDrop}
               >
-                <UploadCloud
-                  aria-hidden="true"
-                  className="mx-auto size-9 text-muted-foreground"
-                />
-                <p className="mt-3 font-medium">
-                  {selectedFile ? selectedFile.name : "Drop your PDF here"}
+                <span className={styles.uploadIcon}>
+                  <UploadCloud aria-hidden="true" className="size-7" />
+                </span>
+                <p className={styles.fileName}>
+                  {selectedFile ? selectedFile.name : "Drop your resume here"}
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className={styles.fileHelp}>
                   {selectedFile
                     ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
-                    : "or choose a file from your device"}
+                    : "PDF · up to 10 MB"}
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <Button
@@ -359,7 +373,7 @@ export function ResumeWorkflow({
                 />
               </div>
 
-              <label className="flex items-start gap-3 rounded-xl border p-4">
+              <label className={styles.aiOption}>
                 <input
                   checked={improveWithAi}
                   className="mt-0.5 size-4 rounded border-input"
@@ -397,14 +411,14 @@ export function ResumeWorkflow({
       ) : null}
 
       {!resume ? (
-        <Card>
+        <Card className={styles.manualCard}>
           <CardHeader>
             <CardTitle>
               <h2 className="text-lg font-semibold">Don&apos;t have a resume?</h2>
             </CardTitle>
             <CardDescription className="leading-6">
               Start with a blank portfolio and add your information directly.
-              This path skips PDF upload and AI extraction completely.
+              This path starts with a clean editor, ready for your details.
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -418,9 +432,9 @@ export function ResumeWorkflow({
       ) : null}
 
       {resume?.status === "failed" ? (
-        <Card>
+        <Card className={styles.errorCard}>
           <CardHeader>
-            <div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <div className={styles.errorIcon}>
               <AlertCircle aria-hidden="true" className="size-5" />
             </div>
             <CardTitle>
@@ -452,15 +466,12 @@ export function ResumeWorkflow({
 
       {resume?.status === "completed" && portfolio ? (
         <div className="space-y-6">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className={styles.reviewHeader}>
             <div>
-              <Badge variant="secondary">Review</Badge>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-                Review your portfolio data
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                AI can make mistakes. Verify every fact, then save this reviewed
-                version before selecting a theme.
+              <Badge variant="secondary">Ready to review</Badge>
+              <h2 className={styles.reviewTitle}>Make it feel like you.</h2>
+              <p className={styles.reviewDescription}>
+                Check every detail, make any edits you need, then continue to your design.
               </p>
             </div>
             <Button onClick={startAnotherUpload} type="button" variant="outline">
@@ -476,7 +487,7 @@ export function ResumeWorkflow({
             value={portfolio}
           />
 
-          <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-xl border bg-background/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+          <div className={styles.saveBar}>
             <p className="text-sm text-muted-foreground">
               Saving keeps the reviewed data on this resume record.
             </p>
@@ -527,7 +538,7 @@ function WorkflowSteps({
   const steps = ["Upload", "Extract", "Review"];
 
   return (
-    <ol aria-label="Resume workflow" className="grid grid-cols-3 gap-2">
+    <ol aria-label="Resume workflow" className={styles.steps}>
       {steps.map((step, index) => {
         const number = index + 1;
         const active = number <= current;
@@ -535,15 +546,15 @@ function WorkflowSteps({
         return (
           <li
             className={cn(
-              "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium sm:text-sm",
-              active ? "bg-foreground text-background" : "text-muted-foreground",
+              styles.step,
+              active && styles.stepActive,
             )}
             key={step}
           >
             <span
               className={cn(
-                "flex size-5 shrink-0 items-center justify-center rounded-full text-[11px]",
-                active ? "bg-background/15" : "bg-muted",
+                styles.stepNumber,
+                active && styles.stepNumberActive,
               )}
             >
               {number}
@@ -561,11 +572,9 @@ function FeedbackMessage({ feedback }: { feedback: Feedback }) {
     <div
       aria-live="polite"
       className={cn(
-        "flex items-start gap-3 rounded-lg border px-4 py-3 text-sm",
-        feedback.tone === "error" &&
-          "border-destructive/30 bg-destructive/5 text-destructive",
-        feedback.tone === "info" && "bg-muted/50",
-        feedback.tone === "success" && "bg-muted/50",
+        styles.feedback,
+        feedback.tone === "error" && styles.feedbackError,
+        feedback.tone === "success" && styles.feedbackSuccess,
       )}
       role={feedback.tone === "error" ? "alert" : "status"}
     >
@@ -599,34 +608,33 @@ function ProcessingCard({ fileName }: { fileName: string }) {
   }, [stages.length]);
 
   return (
-    <Card aria-live="polite">
+    <Card aria-live="polite" className={styles.processingCard}>
       <CardHeader className="items-center text-center">
-        <div className="relative flex size-14 items-center justify-center rounded-full bg-muted">
+        <div className={styles.processingIcon}>
           <FileText aria-hidden="true" className="size-6" />
           <LoaderCircle
             aria-hidden="true"
-            className="absolute -right-1 -top-1 size-5 animate-spin"
+            className={`${styles.spinner} size-5 animate-spin`}
           />
         </div>
         <CardTitle>
-          <h1 className="text-xl font-semibold">Extracting resume details</h1>
+          <h2 className="text-xl font-semibold">Analyzing your resume...</h2>
         </CardTitle>
         <CardDescription className="max-w-md leading-6">
-          Processing {fileName}. This can take a minute; keep this page open or
-          return later using the same URL.
+          We&apos;re organizing {fileName} into a portfolio draft. Keep this page open while we finish.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ol className="mx-auto max-w-md space-y-2" aria-label="Processing stages">
-          <li className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm">
+        <ol className={styles.stages} aria-label="Processing stages">
+          <li className={styles.stageDone}>
             <CheckCircle2 aria-hidden="true" className="size-4 shrink-0" />
             Resume uploaded
           </li>
           {stages.map((stage, index) => (
             <li
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground",
-                activeStage === index && "bg-muted font-medium text-foreground",
+                styles.stage,
+                activeStage === index && styles.stageActive,
               )}
               key={stage}
             >
@@ -642,10 +650,6 @@ function ProcessingCard({ fileName }: { fileName: string }) {
             </li>
           ))}
         </ol>
-        <p className="mx-auto mt-4 max-w-md text-xs leading-5 text-muted-foreground">
-          These labels rotate during one extraction request; they are not
-          separate backend checkpoints.
-        </p>
       </CardContent>
     </Card>
   );

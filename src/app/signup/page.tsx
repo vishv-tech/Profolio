@@ -9,7 +9,7 @@ export default async function SignupPage() {
 
   return (
     <AuthPageShell
-      description="Create your account. You may need to confirm your email before continuing."
+      description="Create your account and turn your experience into a portfolio worth sharing."
       footer={
         <>
           Already have an account?{" "}

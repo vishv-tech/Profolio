@@ -75,3 +75,52 @@ test("production theme routes do not import development PortfolioData fixtures",
   assert.doesNotMatch(source, /fullPortfolioFixture|sparsePortfolioFixture/);
   assert.doesNotMatch(source, /Avery Morgan/);
 });
+
+test("the public home page presents the resume-to-portfolio product journey", () => {
+  const home = readFileSync(
+    fileURLToPath(new URL("../app/page.tsx", import.meta.url)),
+    "utf8",
+  );
+  const styles = readFileSync(
+    fileURLToPath(new URL("../app/page.module.css", import.meta.url)),
+    "utf8",
+  );
+
+  assert.match(home, /ResumePhone/);
+  assert.match(home, /PortfolioLaptop/);
+  assert.match(home, /Resume in/);
+  assert.match(home, /Portfolio out/);
+  assert.match(home, /href="\/signup"/);
+  assert.match(home, /href="\/login"/);
+  assert.match(home, /id="how-it-works"/);
+  assert.match(home, /id="features"/);
+  assert.match(home, /id="themes"/);
+  assert.match(styles, /@media \(max-width: 620px\)/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("the production Theme Store is a gallery with resilient imagery and a focused live preview", () => {
+  const store = readFileSync(
+    fileURLToPath(new URL("../app/themes/ThemeStore.tsx", import.meta.url)),
+    "utf8",
+  );
+  const styles = readFileSync(
+    fileURLToPath(
+      new URL("../app/themes/ThemeStore.module.css", import.meta.url),
+    ),
+    "utf8",
+  );
+
+  assert.match(store, /\/theme-previews\/\$\{entry\.layoutKey\}\.png/);
+  assert.match(store, /className=\{styles\.themeGrid\}/);
+  assert.match(store, /role="dialog"/);
+  assert.match(store, /aria-modal="true"/);
+  assert.match(store, /movePreview\(-1\)/);
+  assert.match(store, /movePreview\(1\)/);
+  assert.match(store, /selectPortfolioTheme\(/);
+  assert.match(store, /publishPortfolio\(portfolioId\)/);
+  assert.match(store, /LiveThemePreview/);
+  assert.match(styles, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /@media \(max-width: 620px\)/);
+  assert.doesNotMatch(store, /career-pack\/dev\/fixtures/);
+});

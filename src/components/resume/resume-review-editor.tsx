@@ -2,6 +2,7 @@
 
 import {
   EditorSection,
+  editorSectionId,
   EmptySection,
   EntryCard,
   moveItem,
@@ -44,6 +45,8 @@ import type {
   ProfilePhotoScope,
 } from "@/lib/profile-media/types";
 
+import styles from "./resume-review-editor.module.css";
+
 const LINK_TYPES = [
   "linkedin",
   "github",
@@ -80,8 +83,33 @@ export function ResumeReviewEditor({
   value: PortfolioData;
   onChange: (value: PortfolioData) => void;
 }) {
+  const sectionTitles = [
+    "Personal information",
+    improveWithAi
+      ? "Professional summary · AI improved"
+      : "Professional summary",
+    "Experience",
+    "Education",
+    "Projects",
+    "Skills",
+    "Achievements",
+    "Certifications",
+    "Links",
+    "Languages",
+    "Interests",
+    "Custom sections",
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className={styles.editor}>
+      <nav aria-label="Editor sections" className={styles.sectionNav}>
+        {sectionTitles.map((title) => (
+          <a href={`#${editorSectionId(title)}`} key={title}>
+            {title.replace(" · AI improved", "")}
+          </a>
+        ))}
+      </nav>
+      <div className={styles.sections}>
       <EditorSection
         description="Confirm the contact details extracted from the resume."
         title="Personal information"
@@ -836,6 +864,7 @@ export function ResumeReviewEditor({
           );
         })}
       </EditorSection>
+      </div>
     </div>
   );
 }

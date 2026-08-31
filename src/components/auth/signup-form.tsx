@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { signup } from "@/lib/auth/actions";
 import type { AuthActionState } from "@/lib/auth/validation";
 
+import styles from "./auth-form.module.css";
+
 const initialState: AuthActionState = {
   status: "idle",
   message: "",
@@ -25,8 +27,8 @@ export function SignupForm() {
     const deliveryLimited = state.code === "email_rate_limited";
 
     return (
-      <div className="space-y-5 text-center" role="status">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
+      <div className={`${styles.success} space-y-5`} role="status">
+        <div className={styles.successIcon}>
           <MailCheck aria-hidden="true" className="size-5" />
         </div>
         <div className="space-y-2">
@@ -174,7 +176,7 @@ export function SignupForm() {
       {state.message ? (
         <p
           aria-live="polite"
-          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className={`${styles.feedbackError} px-3 py-2 text-sm`}
           role="alert"
         >
           {state.message}
