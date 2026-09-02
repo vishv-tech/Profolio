@@ -155,6 +155,25 @@ test("print export renders the saved PortfolioData through the selected theme", 
   assert.match(printPage, /config=\{result\.portfolio\.themeConfig\}/);
 });
 
+test("print styling preserves theme backgrounds and hides only export controls", () => {
+  const printStyles = source(
+    "../../app/export/[portfolioId]/print/print.module.css",
+  );
+  const printMedia = printStyles.slice(printStyles.indexOf("@media print"));
+
+  assert.match(printMedia, /-webkit-print-color-adjust:\s*exact/);
+  assert.match(printMedia, /print-color-adjust:\s*exact/);
+  assert.match(printMedia, /\.controls\s*\{[\s\S]*?display:\s*none !important/);
+  assert.doesNotMatch(
+    printMedia,
+    /\.canvas\s*\{[^}]*background:\s*(?:white|#fff(?:fff)?)/,
+  );
+  assert.doesNotMatch(
+    printMedia,
+    /\.canvas\s+(?:nav|\[role="navigation"\])[^}]*display:\s*none/,
+  );
+});
+
 test("production export never imports development portfolio fixtures", () => {
   const production = [
     source("./core.ts"),

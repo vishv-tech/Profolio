@@ -37,19 +37,24 @@
     max-width: none;
     min-height: auto;
     overflow: visible;
-    background: white;
     box-shadow: none;
   }
 
-  .controls,
-  .canvas nav,
-  .canvas [role="navigation"] {
+  .page,
+  .canvas {
+    background: transparent;
+  }
+
+  .controls {
     display: none !important;
   }
 
+  .canvas,
   .canvas *,
   .canvas *::before,
   .canvas *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
     animation: none !important;
     transition: none !important;
   }
