@@ -111,7 +111,6 @@ export async function selectPortfolioTheme(
     };
   }
 
-  revalidatePath("/themes");
   revalidatePath("/dashboard");
 
   return {

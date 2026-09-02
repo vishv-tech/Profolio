@@ -122,7 +122,7 @@ export default async function ThemesPage({ searchParams }: ThemesPageProps) {
           catalog={catalog}
           initialLayoutKey={initialLayoutKey}
           initialSavedLayoutKey={savedLayoutKey}
-          key={initialLayoutKey}
+          key={result.portfolio.id}
           metadataReadFailed={result.metadataReadFailed}
           portfolioData={result.portfolio.draftContent}
           portfolioId={result.portfolio.id}

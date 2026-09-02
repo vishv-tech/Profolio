@@ -124,3 +124,100 @@ test("the production Theme Store is a gallery with resilient imagery and a focus
   assert.match(styles, /@media \(max-width: 620px\)/);
   assert.doesNotMatch(store, /career-pack\/dev\/fixtures/);
 });
+
+test("temporary theme previews sync the URL without App Router navigation", () => {
+  const store = readFileSync(
+    fileURLToPath(new URL("../app/themes/ThemeStore.tsx", import.meta.url)),
+    "utf8",
+  );
+  const page = readFileSync(
+    fileURLToPath(new URL("../app/themes/page.tsx", import.meta.url)),
+    "utf8",
+  );
+  const handlerStart = store.indexOf("  function setPreviewTheme(");
+  const handlerEnd = store.indexOf("\n  function movePreview(", handlerStart);
+
+  assert.ok(handlerStart >= 0 && handlerEnd > handlerStart);
+
+  const previewHandler = store.slice(handlerStart, handlerEnd);
+
+  assert.match(previewHandler, /window\.history\.replaceState\(/);
+  assert.doesNotMatch(previewHandler, /router\.(?:push|replace|refresh)\(/);
+  assert.match(
+    previewHandler,
+    /portfolio=\$\{encodeURIComponent\(portfolioId\)\}&theme=\$\{encodeURIComponent\(nextLayoutKey\)\}/,
+  );
+  assert.match(page, /typeof params\.theme === "string"/);
+  assert.match(
+    page,
+    /resolveThemeLayoutKey\(\s*requestedLayoutKey,\s*savedLayoutKey,\s*\)/,
+  );
+});
+
+test("saving a theme preserves the open preview and reconciles saved state locally", () => {
+  const store = readFileSync(
+    fileURLToPath(new URL("../app/themes/ThemeStore.tsx", import.meta.url)),
+    "utf8",
+  );
+  const page = readFileSync(
+    fileURLToPath(new URL("../app/themes/page.tsx", import.meta.url)),
+    "utf8",
+  );
+  const action = readFileSync(
+    fileURLToPath(new URL("../app/themes/actions.ts", import.meta.url)),
+    "utf8",
+  );
+  const handlerStart = store.indexOf("  function saveTheme(");
+  const handlerEnd = store.indexOf(
+    "\n  function publishSavedPortfolio(",
+    handlerStart,
+  );
+
+  assert.ok(handlerStart >= 0 && handlerEnd > handlerStart);
+
+  const saveHandler = store.slice(handlerStart, handlerEnd);
+
+  assert.match(saveHandler, /selectPortfolioTheme\(/);
+  assert.match(saveHandler, /setConfigOverrides\(/);
+  assert.match(saveHandler, /setSavedLayoutKey\(result\.layoutKey\)/);
+  assert.match(saveHandler, /tone: "success"/);
+  assert.match(saveHandler, /window\.history\.replaceState\(/);
+  assert.doesNotMatch(saveHandler, /router\.(?:push|replace|refresh)\(/);
+  assert.doesNotMatch(saveHandler, /setPreviewOpen\(false\)/);
+  assert.match(page, /key=\{result\.portfolio\.id\}/);
+  assert.doesNotMatch(page, /key=\{initialLayoutKey\}/);
+  assert.doesNotMatch(action, /revalidatePath\("\/themes"\)/);
+  assert.match(action, /revalidatePath\("\/dashboard"\)/);
+});
+
+test("save and publish failures keep preview controls available for retry", () => {
+  const store = readFileSync(
+    fileURLToPath(new URL("../app/themes/ThemeStore.tsx", import.meta.url)),
+    "utf8",
+  );
+  const saveStart = store.indexOf("  function saveTheme(");
+  const publishStart = store.indexOf(
+    "\n  function publishSavedPortfolio(",
+    saveStart,
+  );
+  const handlersEnd = store.indexOf("\n  if (!selected || !selectedConfig)", publishStart);
+
+  assert.ok(
+    saveStart >= 0 && publishStart > saveStart && handlersEnd > publishStart,
+  );
+
+  const saveHandler = store.slice(saveStart, publishStart);
+  const publishHandler = store.slice(publishStart, handlersEnd);
+
+  assert.match(saveHandler, /tone: "error"/);
+  assert.doesNotMatch(saveHandler, /setPreviewOpen\(false\)/);
+  assert.match(publishHandler, /publishPortfolio\(portfolioId\)/);
+  assert.match(publishHandler, /tone: "error"/);
+  assert.doesNotMatch(publishHandler, /setPreviewOpen\(false\)/);
+  assert.match(
+    publishHandler,
+    /router\.push\(\s*`\/dashboard\?portfolio=\$\{encodeURIComponent\(portfolioId\)\}&published=1`/,
+  );
+  assert.match(store, /disabled=\{!selectedIsSaved \|\| isPublishing\}/);
+  assert.match(store, /\{selectedIsSaved \? "Theme selected" : "Use this theme"\}/);
+});

@@ -1,7 +1,25 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { GoogleGenAI } from "@google/genai";
+
+test("shared Gemini availability order starts with 3.5 and keeps both fallbacks", () => {
+  const source = readFileSync(
+    fileURLToPath(new URL("./gemini.ts", import.meta.url)),
+    "utf8",
+  );
+  const configuredModels = source.match(
+    /GEMINI_RESUME_MODELS\s*=\s*\[([\s\S]*?)\]\s*as const/u,
+  );
+
+  assert.ok(configuredModels);
+  assert.deepEqual(
+    [...configuredModels[1].matchAll(/"([^"]+)"/gu)].map((match) => match[1]),
+    ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash"],
+  );
+});
 
 function rejectWhenAborted(signal: AbortSignal | null | undefined) {
   return new Promise<Response>((_, reject) => {

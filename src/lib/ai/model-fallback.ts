@@ -11,7 +11,23 @@ type ModelFallbackOptions<TModel extends string, TValue> = {
   onAttemptStart?: (attempt: ModelAttemptStart<TModel>) => void;
   onFallback?: (unavailableModel: TModel, nextModel: TModel) => void;
   overallSignal?: AbortSignal;
+  recovery?: ModelRecoveryOptions<TModel>;
   request: (model: TModel, signal: AbortSignal) => Promise<TValue>;
+};
+
+export type ModelRecoveryOptions<TModel extends string> = {
+  backoffMs: number;
+  deadlineAt: number;
+  model: TModel;
+  onBackoff?: (details: { durationMs: number }) => void;
+  onEvaluation?: (details: ModelRecoveryEvaluation) => void;
+  safetyMarginMs: number;
+};
+
+export type ModelRecoveryEvaluation = {
+  eligible: boolean;
+  remainingMs: number;
+  requiredMs: number;
 };
 
 export type ModelFallbackResult<TModel extends string, TValue> = {
@@ -22,13 +38,29 @@ export type ModelFallbackResult<TModel extends string, TValue> = {
 export type ModelAttemptStart<TModel extends string> = {
   attemptNumber: number;
   model: TModel;
+  recovery: boolean;
 };
 
 export type ModelAttemptResult<TModel extends string> = {
   attemptNumber: number;
   durationMs: number;
+  error?: unknown;
   model: TModel;
   outcome: "failed" | "success" | "timeout";
+  recovery: boolean;
+};
+
+export type GeminiFailureDiagnostics = {
+  errorName: string;
+  fallbackReason:
+    | "attempt-timeout"
+    | "capacity"
+    | "provider-server-error"
+    | "provider-unavailable"
+    | "terminal";
+  httpStatus?: number;
+  providerCode?: string;
+  transient: boolean;
 };
 
 export class ModelAttemptTimeoutError extends Error {
@@ -141,10 +173,77 @@ export function isTransientGeminiAvailabilityError(error: unknown) {
   }
 
   return (
-    signals.statuses.includes(503) ||
+    signals.statuses.some((status) =>
+      [500, 502, 503, 504].includes(status),
+    ) ||
     signals.codes.includes("UNAVAILABLE") ||
     clearlySignalsTransientCapacity(message)
   );
+}
+
+export function getGeminiFailureDiagnostics(
+  error: unknown,
+): GeminiFailureDiagnostics {
+  const signals: ErrorSignals = { codes: [], messages: [], statuses: [] };
+  collectErrorSignals(error, signals);
+
+  const message = signals.messages.join("\n");
+  const httpStatus = signals.statuses[0];
+  const providerCode = signals.codes[0];
+  const transient = isTransientGeminiAvailabilityError(error);
+  let fallbackReason: GeminiFailureDiagnostics["fallbackReason"] = "terminal";
+
+  if (error instanceof ModelAttemptTimeoutError) {
+    fallbackReason = "attempt-timeout";
+  } else if (clearlySignalsTransientCapacity(message)) {
+    fallbackReason = "capacity";
+  } else if (
+    signals.statuses.some((status) => [500, 502, 503, 504].includes(status))
+  ) {
+    fallbackReason = "provider-server-error";
+  } else if (signals.codes.includes("UNAVAILABLE")) {
+    fallbackReason = "provider-unavailable";
+  }
+
+  return {
+    errorName:
+      isRecord(error) && typeof error.name === "string" && error.name.trim()
+        ? error.name
+        : "UnknownError",
+    fallbackReason,
+    ...(httpStatus === undefined ? {} : { httpStatus }),
+    ...(providerCode === undefined ? {} : { providerCode }),
+    transient,
+  };
+}
+
+async function waitForBackoff(
+  durationMs: number,
+  overallSignal: AbortSignal | undefined,
+) {
+  if (overallSignal?.aborted) {
+    throw overallSignal.reason ?? new Error("Gemini request was aborted.");
+  }
+
+  if (durationMs <= 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const finish = () => {
+      overallSignal?.removeEventListener("abort", abort);
+      resolve();
+    };
+    const abort = () => {
+      clearTimeout(timeout);
+      reject(
+        overallSignal?.reason ?? new Error("Gemini request was aborted."),
+      );
+    };
+    const timeout = setTimeout(finish, durationMs);
+
+    overallSignal?.addEventListener("abort", abort, { once: true });
+  });
 }
 
 async function requestWithAttemptTimeout<TModel extends string, TValue>(
@@ -230,6 +329,7 @@ export async function runWithModelFallback<
   request,
   onFallback,
   overallSignal,
+  recovery,
 }: ModelFallbackOptions<TModel, TValue>): Promise<
   ModelFallbackResult<TModel, TValue>
 > {
@@ -237,11 +337,14 @@ export async function runWithModelFallback<
     throw new Error("At least one Gemini model must be configured.");
   }
 
+  let exhaustedTransientChain = false;
+  let finalTransientError: unknown;
+
   for (let index = 0; index < models.length; index += 1) {
     const model = models[index];
     const attemptNumber = index + 1;
     const startedAt = performance.now();
-    onAttemptStart?.({ attemptNumber, model });
+    onAttemptStart?.({ attemptNumber, model, recovery: false });
 
     try {
       const value = await requestWithAttemptTimeout(
@@ -255,6 +358,7 @@ export async function runWithModelFallback<
         durationMs: performance.now() - startedAt,
         model,
         outcome: "success",
+        recovery: false,
       });
       return { model, value };
     } catch (error) {
@@ -262,8 +366,10 @@ export async function runWithModelFallback<
       onAttempt?.({
         attemptNumber,
         durationMs: performance.now() - startedAt,
+        error,
         model,
         outcome: timedOut ? "timeout" : "failed",
+        recovery: false,
       });
 
       if (overallSignal?.aborted) {
@@ -271,12 +377,97 @@ export async function runWithModelFallback<
       }
 
       const nextModel = models[index + 1];
+      const transient = isTransientGeminiAvailabilityError(error);
 
-      if (!nextModel || !isTransientGeminiAvailabilityError(error)) {
+      if (!transient) {
         throw error;
       }
 
-      onFallback?.(model, nextModel);
+      if (nextModel) {
+        onFallback?.(model, nextModel);
+        continue;
+      }
+
+      if (!recovery) {
+        throw error;
+      }
+
+      exhaustedTransientChain = true;
+      finalTransientError = error;
+      break;
+    }
+  }
+
+  if (recovery && exhaustedTransientChain) {
+    if (overallSignal?.aborted) {
+      throw overallSignal.reason ?? finalTransientError;
+    }
+
+    const backoffMs = Math.max(0, recovery.backoffMs);
+    const safetyMarginMs = Math.max(0, recovery.safetyMarginMs);
+    const attemptBudgetMs = attemptTimeoutMs ?? Number.POSITIVE_INFINITY;
+    const remainingMs = Math.max(0, recovery.deadlineAt - performance.now());
+    const requiredMs = backoffMs + attemptBudgetMs + safetyMarginMs;
+    const eligible =
+      Number.isFinite(requiredMs) && remainingMs >= requiredMs;
+
+    recovery.onEvaluation?.({ eligible, remainingMs, requiredMs });
+
+    if (!eligible) {
+      throw finalTransientError;
+    }
+
+    recovery.onBackoff?.({ durationMs: backoffMs });
+    await waitForBackoff(backoffMs, overallSignal);
+
+    const remainingAfterBackoffMs = Math.max(
+      0,
+      recovery.deadlineAt - performance.now(),
+    );
+
+    if (remainingAfterBackoffMs < attemptBudgetMs + safetyMarginMs) {
+      recovery.onEvaluation?.({
+        eligible: false,
+        remainingMs: remainingAfterBackoffMs,
+        requiredMs: attemptBudgetMs + safetyMarginMs,
+      });
+      throw finalTransientError;
+    }
+
+    const attemptNumber = models.length + 1;
+    const startedAt = performance.now();
+    onAttemptStart?.({
+      attemptNumber,
+      model: recovery.model,
+      recovery: true,
+    });
+
+    try {
+      const value = await requestWithAttemptTimeout(
+        recovery.model,
+        request,
+        attemptBudgetMs,
+        overallSignal,
+      );
+      onAttempt?.({
+        attemptNumber,
+        durationMs: performance.now() - startedAt,
+        model: recovery.model,
+        outcome: "success",
+        recovery: true,
+      });
+      return { model: recovery.model, value };
+    } catch (error) {
+      const timedOut = error instanceof ModelAttemptTimeoutError;
+      onAttempt?.({
+        attemptNumber,
+        durationMs: performance.now() - startedAt,
+        error,
+        model: recovery.model,
+        outcome: timedOut ? "timeout" : "failed",
+        recovery: true,
+      });
+      throw error;
     }
   }
 
