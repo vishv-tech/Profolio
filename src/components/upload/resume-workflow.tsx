@@ -49,6 +49,19 @@ type Feedback = {
   message: string;
 };
 
+const PROCESSING_STAGES = [
+  "Resume uploaded",
+  "Reading resume",
+  "Identifying experience",
+  "Organizing projects",
+  "Extracting skills",
+  "Preparing portfolio",
+] as const;
+const PROCESSING_STAGE_FADE_MS = 400;
+const PROCESSING_STAGE_VISIBLE_MS = 2_800;
+const PROCESSING_STAGE_INTERVAL_MS =
+  PROCESSING_STAGE_FADE_MS * 2 + PROCESSING_STAGE_VISIBLE_MS;
+
 function validateBrowserFile(file: File) {
   if (!file.name.toLowerCase().endsWith(".pdf")) {
     return "Choose a PDF resume.";
@@ -589,67 +602,86 @@ function FeedbackMessage({ feedback }: { feedback: Feedback }) {
 }
 
 function ProcessingCard({ fileName }: { fileName: string }) {
-  const stages = [
-    "Reading resume",
-    "Identifying experience",
-    "Organizing projects",
-    "Extracting skills",
-    "Preparing portfolio",
-  ];
   const [activeStage, setActiveStage] = useState(0);
+  const [stagePhase, setStagePhase] = useState<"entering" | "exiting">(
+    "entering",
+  );
+  const currentStage = PROCESSING_STAGES[activeStage];
+  const isFinalStage = activeStage === PROCESSING_STAGES.length - 1;
 
   useEffect(() => {
-    const interval = window.setInterval(
-      () => setActiveStage((current) => (current + 1) % stages.length),
-      1_800,
+    if (isFinalStage) return;
+
+    const fadeOutTimeout = window.setTimeout(
+      () => setStagePhase("exiting"),
+      PROCESSING_STAGE_FADE_MS + PROCESSING_STAGE_VISIBLE_MS,
+    );
+    const advanceTimeout = window.setTimeout(
+      () => {
+        setActiveStage((current) =>
+          Math.min(current + 1, PROCESSING_STAGES.length - 1),
+        );
+        setStagePhase("entering");
+      },
+      PROCESSING_STAGE_INTERVAL_MS,
     );
 
-    return () => window.clearInterval(interval);
-  }, [stages.length]);
+    return () => {
+      window.clearTimeout(fadeOutTimeout);
+      window.clearTimeout(advanceTimeout);
+    };
+  }, [activeStage, isFinalStage]);
 
   return (
-    <Card aria-live="polite" className={styles.processingCard}>
-      <CardHeader className="items-center text-center">
-        <div className={styles.processingIcon}>
-          <FileText aria-hidden="true" className="size-6" />
-          <LoaderCircle
-            aria-hidden="true"
-            className={`${styles.spinner} size-5 animate-spin`}
-          />
+    <Card className={styles.processingCard}>
+      <CardHeader className={styles.processingHeader}>
+        <p className={styles.processingBadge}>
+          <Sparkles aria-hidden="true" className="size-3.5" />
+          AI resume analysis
+        </p>
+        <div aria-hidden="true" className={styles.processingVisual}>
+          <span className={styles.processingAura} />
+          <div className={styles.processingDocument}>
+            <FileText className={styles.processingDocumentIcon} />
+            <span className={styles.processingSparkle}>
+              <Sparkles className="size-4" />
+            </span>
+          </div>
         </div>
         <CardTitle>
-          <h2 className="text-xl font-semibold">Analyzing your resume...</h2>
+          <h2 className={styles.processingTitle}>Analyzing your resume...</h2>
         </CardTitle>
-        <CardDescription className="max-w-md leading-6">
-          We&apos;re organizing {fileName} into a portfolio draft. Keep this page open while we finish.
-        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ol className={styles.stages} aria-label="Processing stages">
-          <li className={styles.stageDone}>
-            <CheckCircle2 aria-hidden="true" className="size-4 shrink-0" />
-            Resume uploaded
-          </li>
-          {stages.map((stage, index) => (
-            <li
-              className={cn(
-                styles.stage,
-                activeStage === index && styles.stageActive,
-              )}
-              key={stage}
-            >
-              {activeStage === index ? (
-                <LoaderCircle
-                  aria-hidden="true"
-                  className="size-4 shrink-0 animate-spin"
-                />
+      <CardContent className={styles.processingContent}>
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className={styles.processingStatus}
+          role="status"
+        >
+          <div
+            className={cn(
+              styles.processingStatusMessage,
+              stagePhase === "entering"
+                ? styles.processingStatusEntering
+                : styles.processingStatusExiting,
+              isFinalStage && styles.processingStatusFinal,
+            )}
+            key={currentStage}
+          >
+            <span className={styles.processingStatusIcon}>
+              {activeStage === 0 ? (
+                <CheckCircle2 aria-hidden="true" className="size-5" />
               ) : (
-                <span className="ml-1 size-2 shrink-0 rounded-full border" />
+                <Sparkles aria-hidden="true" className="size-5" />
               )}
-              {stage}
-            </li>
-          ))}
-        </ol>
+            </span>
+            <span>{currentStage}</span>
+          </div>
+        </div>
+        <div aria-hidden="true" className={styles.processingTrack}>
+          <span className={styles.processingTrackFlow} />
+        </div>
       </CardContent>
     </Card>
   );
