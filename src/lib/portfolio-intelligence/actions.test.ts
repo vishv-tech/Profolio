@@ -56,10 +56,61 @@ test("manual draft saves are active-user, owner, and concurrency protected", () 
 
 test("Gemini stays server-only and uses the bounded existing availability helper", () => {
   const adapter = source("./gemini.ts");
+  const resume = source("../ai/resume-extraction.ts");
+  const shared = source("../ai/gemini.ts");
 
   assert.match(adapter, /import "server-only"/);
   assert.match(adapter, /requestWithGeminiAvailabilityFallback/);
   assert.match(adapter, /AbortController/);
+  assert.match(
+    adapter,
+    /PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS\s*=\s*12_000/,
+  );
+  assert.match(adapter, /PORTFOLIO_INTELLIGENCE_TIMEOUT_MS\s*=\s*45_000/);
+  assert.match(
+    adapter,
+    /PORTFOLIO_INTELLIGENCE_RECOVERY_BACKOFF_MS\s*=\s*350/,
+  );
+  assert.match(
+    adapter,
+    /PORTFOLIO_INTELLIGENCE_RECOVERY_SAFETY_MARGIN_MS\s*=\s*1_000/,
+  );
+  assert.match(
+    adapter,
+    /timeout:\s*PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS/,
+  );
+  assert.match(
+    adapter,
+    /attemptTimeoutMs:\s*PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS/,
+  );
   assert.match(adapter, /responseMimeType: "application\/json"/);
   assert.doesNotMatch(adapter, /NEXT_PUBLIC_GEMINI|GEMINI_API_KEY/);
+  assert.match(shared, /GEMINI_MODEL_ATTEMPT_TIMEOUT_MS\s*=\s*30_000/);
+  assert.match(
+    shared,
+    /options\.attemptTimeoutMs\s*\?\?\s*GEMINI_MODEL_ATTEMPT_TIMEOUT_MS/,
+  );
+  assert.match(resume, /timeout:\s*GEMINI_MODEL_ATTEMPT_TIMEOUT_MS/);
+  assert.doesNotMatch(resume, /attemptTimeoutMs:/);
+  assert.doesNotMatch(resume, /recovery:/);
+  assert.match(adapter, /recovery:\s*\{/);
+  assert.match(adapter, /model:\s*GEMINI_RESUME_MODELS\[0\]/);
+  assert.match(adapter, /"recovery-evaluation"/);
+  assert.match(adapter, /getGeminiFailureDiagnostics\(error\)/);
+});
+
+test("Upgrade Plan preserves the friendly failure after internal fallback exhaustion", () => {
+  const actions = source("./actions.ts");
+  const card = source("../../components/portfolio-intelligence/upgrade-plan-card.tsx");
+
+  assert.match(
+    actions,
+    /AI_UNAVAILABLE_MESSAGE\s*=\s*\r?\n?\s*"AI suggestions are temporarily unavailable\. Try again\."/,
+  );
+  assert.match(
+    actions,
+    /catch\s*\{\s*return \{ success: false, message: AI_UNAVAILABLE_MESSAGE, reason: "ai" \}/,
+  );
+  assert.match(card, /disabled=\{isPending\}/);
+  assert.match(card, /isPending \? "Generating\.\.\."/);
 });

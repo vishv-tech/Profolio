@@ -208,7 +208,7 @@ function sourcePart(source: PreparedResumeSource): Part {
 }
 
 function logGeminiAttempt(
-  stage: "model-attempt-end" | "model-attempt-start",
+  stage: "model-attempt-end" | "model-attempt-start" | "model-fallback",
   details: Record<string, number | string>,
 ) {
   if (process.env.NODE_ENV === "development") {
@@ -280,6 +280,14 @@ async function requestExtraction(
               inputMode: source.kind,
               model,
               phase,
+            });
+          },
+          onFallback: (fromModel, toModel) => {
+            logGeminiAttempt("model-fallback", {
+              fromModel,
+              inputMode: source.kind,
+              phase,
+              toModel,
             });
           },
           overallSignal,

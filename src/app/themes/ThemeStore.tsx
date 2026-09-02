@@ -261,9 +261,10 @@ export function ThemeStore({
     setLayoutKey(nextLayoutKey);
     setFeedback(null);
     setPreviewOpen(openPreview);
-    router.push(
+    window.history.replaceState(
+      null,
+      "",
       `/themes?portfolio=${encodeURIComponent(portfolioId)}&theme=${encodeURIComponent(nextLayoutKey)}`,
-      { scroll: false },
     );
   }
 
@@ -290,9 +291,10 @@ export function ThemeStore({
     setLayoutKey(theme.layoutKey);
     setFeedback(null);
     if (theme.layoutKey !== layoutKey) {
-      router.push(
+      window.history.replaceState(
+        null,
+        "",
         `/themes?portfolio=${encodeURIComponent(portfolioId)}&theme=${encodeURIComponent(theme.layoutKey)}`,
-        { scroll: false },
       );
     }
     startSaving(async () => {
@@ -316,7 +318,6 @@ export function ThemeStore({
           tone: "success",
           message: `${theme.name} is saved to this draft.`,
         });
-        router.refresh();
       } catch {
         setFeedback({
           tone: "error",

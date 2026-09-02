@@ -6,12 +6,13 @@ import {
   runWithModelFallback,
   type ModelAttemptResult,
   type ModelAttemptStart,
+  type ModelRecoveryOptions,
 } from "@/lib/ai/model-fallback";
 
 export const GEMINI_RESUME_MODELS = [
-  "gemini-3.7-flash",
-  "gemini-3.6-flash",
   "gemini-3.5-flash",
+  "gemini-3.6-flash",
+  "gemini-3.7-flash",
 ] as const;
 export const GEMINI_OVERALL_TIMEOUT_MS = 120_000;
 export const GEMINI_MODEL_ATTEMPT_TIMEOUT_MS = 30_000;
@@ -46,6 +47,7 @@ export function requestWithGeminiAvailabilityFallback<TValue>(
     signal: AbortSignal,
   ) => Promise<TValue>,
   options: {
+    attemptTimeoutMs?: number;
     onAttempt?: (result: ModelAttemptResult<GeminiResumeModel>) => void;
     onAttemptStart?: (attempt: ModelAttemptStart<GeminiResumeModel>) => void;
     onFallback?: (
@@ -53,27 +55,20 @@ export function requestWithGeminiAvailabilityFallback<TValue>(
       nextModel: GeminiResumeModel,
     ) => void;
     overallSignal?: AbortSignal;
+    recovery?: ModelRecoveryOptions<GeminiResumeModel>;
   } = {},
 ) {
   const client = getGeminiClient();
 
   return runWithModelFallback({
-    attemptTimeoutMs: GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
+    attemptTimeoutMs:
+      options.attemptTimeoutMs ?? GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
     models: GEMINI_RESUME_MODELS,
     onAttempt: options.onAttempt,
     onAttemptStart: options.onAttemptStart,
-    onFallback: (unavailableModel, nextModel) => {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[resume-extraction]", {
-          stage: "model-fallback",
-          fromModel: unavailableModel,
-          toModel: nextModel,
-        });
-      }
-
-      options.onFallback?.(unavailableModel, nextModel);
-    },
+    onFallback: options.onFallback,
     overallSignal: options.overallSignal,
+    recovery: options.recovery,
     request: (model, signal) => request(client, model, signal),
   });
 }
