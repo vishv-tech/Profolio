@@ -12,6 +12,7 @@ export const defaultThemeConfig: ThemeConfig = Object.freeze({
     borderColor: "#e2e8f0",
     fontFamily: "Geist",
     headingFontFamily: "Geist",
+    headingScale: "medium",
     borderRadius: 12,
     spacing: "comfortable",
     animationIntensity: "subtle",
@@ -88,6 +89,9 @@ export function resolveThemeConfig(value: unknown): ThemeConfig {
       defaultThemeConfig.visibility,
       config.visibility,
     ),
+    ...(config.styleOverrides === undefined
+      ? {}
+      : { styleOverrides: config.styleOverrides }),
   });
 
   return merged.success ? merged.data : cloneDefaultThemeConfig();

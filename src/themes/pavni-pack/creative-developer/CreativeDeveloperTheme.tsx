@@ -1,6 +1,6 @@
 "use client";
 
-import { ContactLine, frameStyle, OrderedSections, ProfileIdentity } from "../shared";
+import { ContactLine, OrderedSections, ProfileIdentity, themeFrameProps } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
 import styles from "./styles.module.css";
@@ -9,10 +9,8 @@ export default function CreativeDeveloperTheme({ data, config }: PavniThemeProps
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-creative-developer"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-creative-developer")}
     >
       <div className={styles.grid} aria-hidden="true" />
       <header className={styles.header}>

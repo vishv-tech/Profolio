@@ -203,6 +203,7 @@ export async function uploadResume(
 export async function processResume(
   resumeId: string,
 ): Promise<ProcessResumeResult> {
+  const processingStartedAt = performance.now();
   const timing = new ResumeProcessingTiming("resume-processing");
   let outcome: "failed" | "rejected" | "success" = "failed";
 
@@ -348,7 +349,7 @@ export async function processResume(
       let portfolio = await extractPortfolioFromPdf(
         pdfBytes,
         claim.improve_with_ai,
-        { timing },
+        { demoStartedAtMs: processingStartedAt, timing },
       );
       const profileMedia = await addBestEffortProfileMedia({
         pdfBytes,

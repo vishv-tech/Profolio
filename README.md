@@ -49,6 +49,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
 GEMINI_API_KEY=
+PROFOLIO_DEMO_MODE=false
 ```
 
 `SUPABASE_SECRET_KEY` is server-only. It must never be exposed to a Client
@@ -60,6 +61,12 @@ user's cookies, not the privileged client.
 Create a key in Google AI Studio, place it only in `.env.local`, and restart the
 development server. The application never sends the key, a raw Gemini error, or
 a private resume URL to the browser.
+
+`PROFOLIO_DEMO_MODE` is an optional server-only reliability flag and defaults to
+`false`. Set it to `true` in `.env.local` only when demonstrating the recognized
+Vishv resume flow, then restart the development server. It is intentionally not
+prefixed with `NEXT_PUBLIC_`; unrelated resumes and normal production behavior
+continue through the real Gemini extraction path.
 
 ## Resume workflow
 

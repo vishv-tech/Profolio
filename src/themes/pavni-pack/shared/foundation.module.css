@@ -19,6 +19,42 @@
   overflow-wrap: anywhere;
 }
 
+.root[data-ai-theme-customized="true"] :where(h1, h2, h3, h4) {
+  zoom: var(--theme-heading-scale, 1);
+}
+
+.root[data-ai-theme-customized="true"] {
+  color: var(--ink) !important;
+  background: var(--bg) !important;
+  font-family: var(--pavni-body-font) !important;
+}
+
+.root[data-ai-theme-customized="true"] :where(h1, h2, h3, h4) {
+  color: var(--ink);
+  font-family: var(--pavni-heading-font);
+}
+
+.root[data-ai-theme-customized="true"] :global(.portfolio-section),
+.root[data-ai-theme-customized="true"] :global(.custom-item) {
+  border-color: var(--line) !important;
+}
+
+.root[data-ai-theme-customized="true"] :global(.project-card),
+.root[data-ai-theme-customized="true"] :global(.cert-list article) {
+  color: var(--ink) !important;
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  border-radius: var(--radius) !important;
+}
+
+.root[data-ai-theme-customized="true"] :global(.experience-item p),
+.root[data-ai-theme-customized="true"] :global(.plain-list p),
+.root[data-ai-theme-customized="true"] :global(.project-card p),
+.root[data-ai-theme-customized="true"] :global(.cert-list p),
+.root[data-ai-theme-customized="true"] :global(.custom-sections p) {
+  color: var(--muted) !important;
+}
+
 .root :where(img, svg, video, canvas) {
   max-width: 100%;
 }

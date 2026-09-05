@@ -28,4 +28,43 @@
 .content :global(.project-card:is(:hover,:focus-within)), .content :global(.cert-list article:is(:hover,:focus-within)) { background: linear-gradient(145deg,#213354,#121d31); border-color: #73a6ff; box-shadow: 0 18px 42px rgba(49,122,255,.28), inset 0 1px 0 rgba(194,222,255,.32); transform: translateY(-9px) scale(1.015); }
 .footer { display: flex; justify-content: space-between; gap: 20px; padding: 26px clamp(20px,4vw,58px); color: #aebbd4; background: #111827; font: 500 11px/1.35 var(--pavni-mono-font); letter-spacing: .05em; }
 .footer span:last-child { color: #83afff; }
+
+.root[data-ai-theme-customized="true"] .hero {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+.root[data-ai-theme-customized="true"] .nav,
+.root[data-ai-theme-customized="true"] .heroCopy > p,
+.root[data-ai-theme-customized="true"] .summary :global(.section-title),
+.root[data-ai-theme-customized="true"] .content :global(.section-title),
+.root[data-ai-theme-customized="true"] .content :global(.item-meta),
+.root[data-ai-theme-customized="true"] .content :global(.project-links),
+.root[data-ai-theme-customized="true"] .content :global(.cert-list a) { color: var(--accent) !important; }
+.root[data-ai-theme-customized="true"] .heroCopy h1,
+.root[data-ai-theme-customized="true"] .summary :global(.summary-copy) { color: var(--ink); }
+.root[data-ai-theme-customized="true"] .heroMeta,
+.root[data-ai-theme-customized="true"] .content :global(.project-card p),
+.root[data-ai-theme-customized="true"] .content :global(.cert-list p),
+.root[data-ai-theme-customized="true"] .content :global(.experience-item p),
+.root[data-ai-theme-customized="true"] .content :global(.plain-list p),
+.root[data-ai-theme-customized="true"] .content :global(.skill-group > p) { color: var(--muted); }
+.root[data-ai-theme-customized="true"] .contact { color: var(--ink); background: var(--surface); }
+.root[data-ai-theme-customized="true"] .contact > p { color: var(--accent); }
+.root[data-ai-theme-customized="true"] .contact :global(.contact-line),
+.root[data-ai-theme-customized="true"] .contact :global(.contact-links) { color: var(--muted); }
+.root[data-ai-theme-customized="true"] .summary,
+.root[data-ai-theme-customized="true"] .content :global(.portfolio-section) { border-color: var(--line); }
+.root[data-ai-theme-customized="true"] .content :global(.project-card),
+.root[data-ai-theme-customized="true"] .content :global(.cert-list article) {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+.root[data-ai-theme-customized="true"] .content :global(.chips span) {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+}
+.root[data-ai-theme-customized="true"] .footer { color: var(--muted); background: var(--surface); }
+.root[data-ai-theme-customized="true"] .footer span:last-child { color: var(--accent); }
 @media (max-width: 560px) { .nav span:not(.mark) { display: none; } .hero { min-height: 475px; } .contact, .summary { grid-template-columns: 1fr; gap: 25px; } .footer { flex-direction: column; } }

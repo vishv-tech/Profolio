@@ -64,9 +64,10 @@ test("Gemini stays server-only and uses the bounded existing availability helper
   assert.match(adapter, /AbortController/);
   assert.match(
     adapter,
-    /PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS\s*=\s*12_000/,
+    /PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS\s*=\s*30_000/,
   );
-  assert.match(adapter, /PORTFOLIO_INTELLIGENCE_TIMEOUT_MS\s*=\s*45_000/);
+  assert.match(adapter, /UPGRADE_PLAN_TIMEOUT_MS\s*=\s*45_000/);
+  assert.match(adapter, /CONTENT_IMPROVEMENT_TIMEOUT_MS\s*=\s*105_000/);
   assert.match(
     adapter,
     /PORTFOLIO_INTELLIGENCE_RECOVERY_BACKOFF_MS\s*=\s*350/,
@@ -97,20 +98,28 @@ test("Gemini stays server-only and uses the bounded existing availability helper
   assert.match(adapter, /model:\s*GEMINI_RESUME_MODELS\[0\]/);
   assert.match(adapter, /"recovery-evaluation"/);
   assert.match(adapter, /getGeminiFailureDiagnostics\(error\)/);
+  assert.match(adapter, /remainingMs:\s*remainingBudgetMs\(\)/);
+  assert.match(
+    adapter,
+    /generateStructuredUpgradePlan\s*=\s*\r?\n?\s*createPortfolioIntelligenceGenerator\(UPGRADE_PLAN_TIMEOUT_MS\)/,
+  );
+  assert.match(
+    adapter,
+    /controller\.abort\(new Error\("Portfolio intelligence timed out\."\)\)/,
+  );
+  assert.match(shared, /GEMINI_RESUME_MODELS\s*=\s*\[[\s\S]*"gemini-3\.5-flash"[\s\S]*"gemini-3\.6-flash"[\s\S]*"gemini-3\.7-flash"/);
+  assert.match(shared, /GEMINI_OVERALL_TIMEOUT_MS\s*=\s*120_000/);
 });
 
-test("Upgrade Plan preserves the friendly failure after internal fallback exhaustion", () => {
+test("Upgrade Plan returns a source-labeled deterministic fallback after AI exhaustion", () => {
   const actions = source("./actions.ts");
   const card = source("../../components/portfolio-intelligence/upgrade-plan-card.tsx");
 
-  assert.match(
-    actions,
-    /AI_UNAVAILABLE_MESSAGE\s*=\s*\r?\n?\s*"AI suggestions are temporarily unavailable\. Try again\."/,
-  );
-  assert.match(
-    actions,
-    /catch\s*\{\s*return \{ success: false, message: AI_UNAVAILABLE_MESSAGE, reason: "ai" \}/,
-  );
+  assert.match(actions, /generateReliablePortfolioUpgradePlan/);
+  assert.match(actions, /generateStructuredUpgradePlan/);
+  assert.match(actions, /source: result\.source/);
+  assert.match(card, /result\.source/);
+  assert.match(card, /AI is temporarily unavailable, so this plan was generated from your portfolio analysis\./);
   assert.match(card, /disabled=\{isPending\}/);
   assert.match(card, /isPending \? "Generating\.\.\."/);
 });

@@ -33,6 +33,32 @@
 .content :global(.project-card:is(:hover,:focus-within)),.content :global(.cert-list article:is(:hover,:focus-within)) { box-shadow: 13px 13px 0 #eaa51c; transform: translate(-7px,-7px) rotate(-1deg); }
 .content :global(.chips span) { color: #171716; background: #eaa51c; border-radius: 0; font-weight: 700; }
 .footer { display: flex; justify-content: space-between; gap: 20px; padding: 25px clamp(20px,5vw,70px); color: #f4e9d4; background: #171716; font: 700 10px/1.4 var(--pavni-mono-font); letter-spacing: .08em; text-transform: uppercase; }
+
+.root[data-ai-theme-customized="true"] .hero { color: var(--surface); background: var(--accent); }
+.root[data-ai-theme-customized="true"] .title { color: var(--surface); }
+.root[data-ai-theme-customized="true"] .title strong {
+  color: var(--ink);
+  -webkit-text-stroke-color: var(--surface);
+  text-shadow: 5px 5px 0 var(--ink);
+}
+.root[data-ai-theme-customized="true"] .contact,
+.root[data-ai-theme-customized="true"] .manifesto { color: var(--ink); background: var(--surface); border-color: var(--line); }
+.root[data-ai-theme-customized="true"] .manifestoCopy :global(.section-title),
+.root[data-ai-theme-customized="true"] .content :global(.section-title) { color: var(--accent); }
+.root[data-ai-theme-customized="true"] .manifestoCopy :global(.summary-copy) { color: var(--ink); }
+.root[data-ai-theme-customized="true"] .content { background: var(--bg); }
+.root[data-ai-theme-customized="true"] .content :global(.portfolio-section),
+.root[data-ai-theme-customized="true"] .content :global(.project-card),
+.root[data-ai-theme-customized="true"] .content :global(.cert-list article) { border-color: var(--line); }
+.root[data-ai-theme-customized="true"] .content :global(.project-card),
+.root[data-ai-theme-customized="true"] .content :global(.project-card:nth-child(3n+2)),
+.root[data-ai-theme-customized="true"] .content :global(.project-card:nth-child(3n)) {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 6px 6px 0 var(--line);
+}
+.root[data-ai-theme-customized="true"] .content :global(.chips span) { color: var(--ink); background: var(--accent); }
+.root[data-ai-theme-customized="true"] .footer { color: var(--surface); background: var(--ink); }
 @keyframes swing { from { transform: rotate(-7deg) translateY(-3px); } to { transform: rotate(7deg) translateY(5px); } }
 @media (max-width: 720px) { .hero { min-height: 570px; } .title { margin-top: 135px; font-size: clamp(55px,15vw,105px); } .title span:last-child { margin-left: 10px; } .identity { right: 24px; bottom: 80px; max-width: 78vw; } .manifesto { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .hero { padding: 26px; } .sticker { top: 13%; } .title { margin-top: 125px; } .identity { bottom: 48px; } .avatar { width: 72px; border-width: 4px; } .slinger { opacity: .68; } .footer { font-size: 8px; } }

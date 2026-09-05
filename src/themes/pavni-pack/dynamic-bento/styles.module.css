@@ -29,6 +29,24 @@
 .grid :global(.portfolio-section .section-title) { margin-bottom: 16px; }
 .grid :global(.project-card:is(:hover, :focus-within)), .grid :global(.cert-list article:is(:hover, :focus-within)) { box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 20%, transparent); transform: translateY(-6px); }
 
+.root[data-ai-theme-customized="true"] .intro {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 64%, var(--surface));
+}
+.root[data-ai-theme-customized="true"] .intro :global(.profile-identity h1),
+.root[data-ai-theme-customized="true"] .intro :global(.headline),
+.root[data-ai-theme-customized="true"] .intro :global(.eyebrow),
+.root[data-ai-theme-customized="true"] .intro :global(.contact-line),
+.root[data-ai-theme-customized="true"] .intro :global(.contact-links) { color: var(--ink); }
+.root[data-ai-theme-customized="true"] .intro :global(.avatar) {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--accent);
+}
+.root[data-ai-theme-customized="true"] .summary { background: color-mix(in srgb, var(--accent) 13%, var(--surface)); }
+.root[data-ai-theme-customized="true"] .skills { background: color-mix(in srgb, var(--accent) 20%, var(--surface)); }
+.root[data-ai-theme-customized="true"] .experience { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+
 @media (max-width: 850px) {
   .summary, .projects, .skills, .experience { grid-column: span 12; }
 }

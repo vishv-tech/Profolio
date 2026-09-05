@@ -16,6 +16,9 @@ import type { PortfolioUpgradePlan } from "@/lib/portfolio-intelligence/schemas"
 
 export function UpgradePlanCard({ portfolioId }: { portfolioId: string }) {
   const [plan, setPlan] = useState<PortfolioUpgradePlan | null>(null);
+  const [planSource, setPlanSource] = useState<
+    "ai" | "deterministic-fallback" | null
+  >(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -29,6 +32,7 @@ export function UpgradePlanCard({ portfolioId }: { portfolioId: string }) {
           return;
         }
         setPlan(result.plan);
+        setPlanSource(result.source);
       } catch {
         setMessage("AI suggestions are temporarily unavailable. Try again.");
       }
@@ -69,6 +73,11 @@ export function UpgradePlanCard({ portfolioId }: { portfolioId: string }) {
 
         {plan ? (
           <div className="space-y-6">
+            {planSource === "deterministic-fallback" ? (
+              <p className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm leading-6 text-blue-950">
+                AI is temporarily unavailable, so this plan was generated from your portfolio analysis.
+              </p>
+            ) : null}
             <p className="text-sm leading-6 text-muted-foreground">{plan.overview}</p>
 
             <section>

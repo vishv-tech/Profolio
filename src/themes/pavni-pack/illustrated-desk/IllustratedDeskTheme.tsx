@@ -2,10 +2,10 @@
 
 import {
   ContactLine,
-  frameStyle,
   OrderedSections,
   SectionContent,
   SectionTitle,
+  themeFrameProps,
 } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
@@ -28,10 +28,8 @@ export default function IllustratedDeskTheme({ data, config }: PavniThemeProps) 
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-illustrated-desk"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-illustrated-desk")}
     >
       <header className={styles.hero}>
         <div className={styles.grid} aria-hidden="true" />

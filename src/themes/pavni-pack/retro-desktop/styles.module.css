@@ -6,6 +6,24 @@
   image-rendering: pixelated;
 }
 
+.root[data-ai-theme-customized="true"] .desktop {
+  background-color: var(--bg);
+  background-image: radial-gradient(color-mix(in srgb, var(--accent) 25%, transparent) 1px, transparent 1px);
+}
+
+.root[data-ai-theme-customized="true"] .welcomeWindow,
+.root[data-ai-theme-customized="true"] .aboutWindow,
+.root[data-ai-theme-customized="true"] .projectsWindow {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--line) 35%, white) var(--line) var(--line) color-mix(in srgb, var(--line) 35%, white);
+}
+
+.root[data-ai-theme-customized="true"] .titleBar { color: var(--surface); background: var(--accent); }
+.root[data-ai-theme-customized="true"] .welcomeWindow strong,
+.root[data-ai-theme-customized="true"] .welcomeWindow :global(.contact-line),
+.root[data-ai-theme-customized="true"] .welcomeWindow :global(.contact-links) { color: var(--accent); }
+
 .desktop {
   position: relative;
   min-height: clamp(500px, 63vw, 720px);

@@ -324,6 +324,23 @@
   text-transform: uppercase;
 }
 
+.root[data-ai-theme-customized="true"] .hero { color: var(--ink); background: var(--surface); }
+.root[data-ai-theme-customized="true"] .hero nav,
+.root[data-ai-theme-customized="true"] .heroCopy h1,
+.root[data-ai-theme-customized="true"] .heroCopy > strong,
+.root[data-ai-theme-customized="true"] .heroContact,
+.root[data-ai-theme-customized="true"] .lensNote { color: var(--ink); }
+.root[data-ai-theme-customized="true"] .heroCopy > p,
+.root[data-ai-theme-customized="true"] .heroCopy h1 i { color: var(--accent); }
+.root[data-ai-theme-customized="true"] .heroCopy h1 span:nth-child(2) { -webkit-text-stroke-color: var(--ink); }
+.root[data-ai-theme-customized="true"] .lens {
+  background: conic-gradient(from 42deg, var(--accent), var(--surface), var(--ink), var(--accent));
+}
+.root[data-ai-theme-customized="true"] .lens::before { background: var(--surface); }
+.root[data-ai-theme-customized="true"] .content { background: var(--bg); }
+.root[data-ai-theme-customized="true"] .intro { color: var(--ink); background: var(--surface); }
+.root[data-ai-theme-customized="true"] .footer { color: var(--surface); background: var(--ink); }
+
 @keyframes pavni-kinetic-sculpture-spin {
   to { transform: rotate(360deg); }
 }

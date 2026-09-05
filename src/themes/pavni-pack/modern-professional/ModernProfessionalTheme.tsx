@@ -1,6 +1,6 @@
 "use client";
 
-import { ContactLine, frameStyle, OrderedSections } from "../shared";
+import { ContactLine, OrderedSections, themeFrameProps } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import { getThemeInitials } from "../shared";
 import type { PavniThemeProps } from "../types";
@@ -10,10 +10,8 @@ export default function ModernProfessionalTheme({ data, config }: PavniThemeProp
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-modern-professional"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-modern-professional")}
     >
       <header className={styles.hero}>
         <nav aria-label="Portfolio context">

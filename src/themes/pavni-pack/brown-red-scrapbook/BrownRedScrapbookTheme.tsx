@@ -2,12 +2,12 @@
 
 import {
   ContactLine,
-  frameStyle,
   getThemeInitials,
   OrderedSections,
   SafeProfileImage,
   SectionContent,
   SectionTitle,
+  themeFrameProps,
 } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
@@ -37,10 +37,8 @@ export default function BrownRedScrapbookTheme({ data, config }: PavniThemeProps
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-brown-red-scrapbook"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-brown-red-scrapbook")}
     >
       <header className={styles.cover}>
         <p className={styles.handle}>Portfolio notes / collected work</p>

@@ -93,6 +93,7 @@ test("only marks a unique matching database theme as persistable", () => {
 test("combines partial database defaults with the canonical ThemeConfig", () => {
   const config = resolveThemeConfig({
     appearance: { accentColor: "#be123c" },
+    styleOverrides: { backgroundColor: "#101828" },
     visibility: { showPhone: false },
   });
 
@@ -103,6 +104,7 @@ test("combines partial database defaults with the canonical ThemeConfig", () => 
   );
   assert.equal(config.visibility.showPhone, false);
   assert.equal(config.visibility.showEmail, true);
+  assert.equal(config.styleOverrides?.backgroundColor, "#101828");
   assert.deepEqual(config.sections.order, defaultThemeConfig.sections.order);
 });
 

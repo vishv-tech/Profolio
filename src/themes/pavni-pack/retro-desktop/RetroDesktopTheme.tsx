@@ -5,18 +5,19 @@ import type { PointerEvent } from "react";
 import foundationStyles from "@/themes/pavni-pack/shared/foundation.module.css";
 import {
   ContactLine,
-  frameStyle,
   getThemeInitials,
   OrderedSections,
   SafeProfileImage,
   SectionContent,
+  themeFrameProps,
 } from "@/themes/pavni-pack/shared";
 import type { PavniThemeProps } from "@/themes/pavni-pack/types";
 
 import styles from "./styles.module.css";
 
 export default function RetroDesktopTheme({ data, config }: PavniThemeProps) {
-  const dynamicMotion = config.appearance.animationIntensity === "dynamic";
+  const frameProps = themeFrameProps(config, "pavni-retro-desktop");
+  const dynamicMotion = frameProps["data-animation"] === "dynamic";
   const fullName = data.personal.fullName.trim() || "Portfolio owner";
 
   const moveCursor = (event: PointerEvent<HTMLElement>) => {
@@ -34,12 +35,10 @@ export default function RetroDesktopTheme({ data, config }: PavniThemeProps) {
   return (
     <main
       className={`${foundationStyles.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-retro-desktop"
       data-theme-pack="pavni"
       onPointerMove={dynamicMotion ? moveCursor : undefined}
-      style={frameStyle(config)}
+      {...frameProps}
     >
       {dynamicMotion ? <span aria-hidden="true" className={styles.cursor} /> : null}
 

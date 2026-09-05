@@ -9,6 +9,11 @@ import {
   getThemeLinkLabel,
   getVisibleThemeSections,
 } from "@/themes/career-pack/shared";
+import {
+  getEffectiveThemeAppearance,
+  hasThemeStyleOverrides,
+  isAiThemeEngineSupported,
+} from "@/lib/theme-ai/capabilities";
 import { getThemeInitials, SECTION_LABELS } from "@/themes/career-pack/shared/data";
 import {
   getSafeEmailUrl,
@@ -32,6 +37,7 @@ type PavniFrameStyle = CSSProperties & {
   "--radius": string;
   "--space": string;
   "--surface": string;
+  "--theme-heading-scale": string;
 };
 
 const SPACING = {
@@ -40,8 +46,15 @@ const SPACING = {
   spacious: "2.25rem",
 } as const;
 
-export function frameStyle(config: ThemeConfig): PavniFrameStyle {
-  const { appearance } = config;
+const HEADING_SCALES = {
+  small: "0.92",
+  medium: "1",
+  large: "1.12",
+} as const;
+
+function appearanceFrameStyle(
+  appearance: ThemeConfig["appearance"],
+): PavniFrameStyle {
 
   return {
     "--accent": appearance.accentColor,
@@ -55,11 +68,30 @@ export function frameStyle(config: ThemeConfig): PavniFrameStyle {
     "--radius": `${appearance.borderRadius}px`,
     "--space": SPACING[appearance.spacing],
     "--surface": appearance.surfaceColor,
+    "--theme-heading-scale":
+      HEADING_SCALES[appearance.headingScale ?? "medium"],
     backgroundColor: appearance.backgroundColor,
     color: appearance.textColor,
     colorScheme: appearance.colorMode,
     fontFamily: getThemeFontStack(appearance.fontFamily),
   };
+}
+
+export function frameStyle(config: ThemeConfig): PavniFrameStyle {
+  return appearanceFrameStyle(config.appearance);
+}
+
+export function themeFrameProps(config: ThemeConfig, layoutKey: string) {
+  const appearance = getEffectiveThemeAppearance(config, layoutKey);
+  const customized =
+    isAiThemeEngineSupported(layoutKey) && hasThemeStyleOverrides(config);
+
+  return {
+    "data-ai-theme-customized": customized ? "true" : undefined,
+    "data-animation": appearance.animationIntensity,
+    "data-color-mode": appearance.colorMode,
+    style: appearanceFrameStyle(appearance),
+  } as const;
 }
 
 export function SafeProfileImage({

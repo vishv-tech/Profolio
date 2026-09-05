@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { sanitizePortfolioForIntelligence } from "./context";
+import { buildDeterministicUpgradePlan } from "./deterministic-upgrade-plan";
+import { ModelAttemptTimeoutError } from "@/lib/ai/model-fallback";
 import {
   applyContentImprovementPatch,
   readContentImprovementTarget,
@@ -15,6 +17,7 @@ import {
 import {
   generateContentImprovement,
   generatePortfolioUpgradePlan,
+  generateReliablePortfolioUpgradePlan,
 } from "./service";
 import { scorePortfolio } from "@/lib/portfolio-score/score";
 import type { PortfolioData } from "@/types/portfolio";
@@ -133,6 +136,81 @@ test("a valid mocked structured upgrade plan is accepted without mutating input"
 
   assert.deepEqual(plan, validPlan);
   assert.equal(calls, 1);
+  assert.deepEqual(data, before);
+});
+
+test("reliable upgrade generation returns AI output without building a fallback", async () => {
+  const data = portfolio();
+  let fallbackCalls = 0;
+  const result = await generateReliablePortfolioUpgradePlan(
+    data,
+    scorePortfolio(data),
+    async () => JSON.stringify(validPlan),
+    () => {
+      fallbackCalls += 1;
+      return PortfolioUpgradePlanSchema.parse(validPlan);
+    },
+  );
+
+  assert.deepEqual(result, { plan: validPlan, source: "ai" });
+  assert.equal(fallbackCalls, 0);
+});
+
+for (const [label, error] of [
+  ["503 chain exhaustion", Object.assign(new Error("unavailable"), { status: 503 })],
+  ["504 deadline", Object.assign(new Error("deadline"), { status: 504 })],
+  ["attempt timeout", new ModelAttemptTimeoutError("gemini-3.5-flash", 30_000)],
+] as const) {
+  test(`${label} returns a validated deterministic upgrade plan`, async () => {
+    const data = portfolio();
+    const result = await generateReliablePortfolioUpgradePlan(
+      data,
+      scorePortfolio(data),
+      async () => {
+        throw error;
+      },
+    );
+
+    assert.equal(result.source, "deterministic-fallback");
+    assert.equal(PortfolioUpgradePlanSchema.safeParse(result.plan).success, true);
+  });
+}
+
+test("invalid AI output degrades to the same deterministic analysis plan", async () => {
+  const data = portfolio();
+  const score = scorePortfolio(data);
+  const result = await generateReliablePortfolioUpgradePlan(
+    data,
+    score,
+    async () => "{}",
+  );
+
+  assert.equal(result.source, "deterministic-fallback");
+  assert.deepEqual(result.plan, buildDeterministicUpgradePlan(data, score));
+});
+
+test("the deterministic plan uses real score gaps without mutating portfolio data", () => {
+  const data = portfolio();
+  data.personal.headline = "";
+  data.projects[0]!.description = "Short";
+  const before = structuredClone(data);
+  const score = scorePortfolio(data);
+  const plan = buildDeterministicUpgradePlan(data, score);
+  const serialized = JSON.stringify(plan);
+
+  assert.equal(PortfolioUpgradePlanSchema.safeParse(plan).success, true);
+  assert.match(plan.overview, new RegExp(`${score.score}/100`));
+  assert.equal(
+    plan.priorities.some(
+      (priority) =>
+        priority.recommendation ===
+        score.suggestions.find((suggestion) => suggestion.id === "profile-headline")
+          ?.message,
+    ),
+    true,
+  );
+  assert.match(serialized, /Student website|LinkedIn/);
+  assert.doesNotMatch(serialized, /5,000|revenue|increased by|award-winning/iu);
   assert.deepEqual(data, before);
 });
 

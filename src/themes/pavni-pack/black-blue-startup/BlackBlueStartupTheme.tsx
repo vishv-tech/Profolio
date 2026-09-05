@@ -2,10 +2,10 @@
 
 import {
   ContactLine,
-  frameStyle,
   OrderedSections,
   SectionContent,
   SectionTitle,
+  themeFrameProps,
 } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
@@ -22,10 +22,8 @@ export default function BlackBlueStartupTheme({ data, config }: PavniThemeProps)
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-black-blue-startup"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-black-blue-startup")}
     >
       <header className={styles.hero}>
         <nav aria-label="Portfolio context" className={styles.nav}>

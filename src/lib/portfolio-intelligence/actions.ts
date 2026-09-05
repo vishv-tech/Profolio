@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { requireActiveUser } from "@/lib/auth/guards";
 import { scorePortfolio } from "@/lib/portfolio-score/score";
-import { generateStructuredPortfolioIntelligence } from "@/lib/portfolio-intelligence/gemini";
+import {
+  generateStructuredPortfolioIntelligence,
+  generateStructuredUpgradePlan,
+} from "@/lib/portfolio-intelligence/gemini";
 import {
   applyContentImprovementPatch,
   readContentImprovementTarget,
@@ -17,7 +20,7 @@ import {
 } from "@/lib/portfolio-intelligence/schemas";
 import {
   generateContentImprovement,
-  generatePortfolioUpgradePlan,
+  generateReliablePortfolioUpgradePlan,
 } from "@/lib/portfolio-intelligence/service";
 import { PortfolioIdSchema } from "@/lib/portfolios/contracts";
 import { logPortfolioDatabaseError } from "@/lib/portfolios/database-errors";
@@ -69,7 +72,11 @@ function hasUsefulContent(data: PortfolioData): boolean {
 }
 
 export type GenerateUpgradePlanActionResult =
-  | { success: true; plan: PortfolioUpgradePlan }
+  | {
+      success: true;
+      plan: PortfolioUpgradePlan;
+      source: "ai" | "deterministic-fallback";
+    }
   | { success: false; message: string; reason: "unavailable" | "insufficient" | "ai" };
 
 export async function generateUpgradePlanAction(
@@ -95,15 +102,13 @@ export async function generateUpgradePlanAction(
   }
 
   try {
-    const plan = await generatePortfolioUpgradePlan(
+    const result = await generateReliablePortfolioUpgradePlan(
       draft.content,
       scorePortfolio(draft.content),
-      generateStructuredPortfolioIntelligence,
+      generateStructuredUpgradePlan,
     );
 
-    return plan
-      ? { success: true, plan }
-      : { success: false, message: AI_UNAVAILABLE_MESSAGE, reason: "ai" };
+    return { success: true, plan: result.plan, source: result.source };
   } catch {
     return { success: false, message: AI_UNAVAILABLE_MESSAGE, reason: "ai" };
   }

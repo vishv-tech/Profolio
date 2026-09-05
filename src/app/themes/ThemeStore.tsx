@@ -23,6 +23,7 @@ import {
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type CSSProperties,
@@ -31,6 +32,7 @@ import {
 } from "react";
 
 import { publishPortfolio } from "@/lib/portfolios/actions";
+import { isAiThemeEngineSupported } from "@/lib/theme-ai/capabilities";
 import type { ThemeStoreEntry } from "@/lib/themes/store";
 import { cn } from "@/lib/utils";
 import { allThemePack, type ThemeComponent } from "@/themes";
@@ -39,6 +41,7 @@ import type { ThemeConfig } from "@/types/theme";
 
 import { selectPortfolioTheme } from "./actions";
 import styles from "./ThemeStore.module.css";
+import { ThemeStudio } from "./ThemeStudio";
 
 const lazyThemes: ReadonlyMap<
   string,
@@ -194,6 +197,8 @@ export function ThemeStore({
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [themeEngineOpen, setThemeEngineOpen] = useState(false);
+  const themeEngineButtonRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState<{
     tone: "error" | "success";
     message: string;
@@ -206,7 +211,15 @@ export function ThemeStore({
 
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPreviewOpen(false);
+      if (event.key !== "Escape") return;
+
+      if (themeEngineOpen) {
+        setThemeEngineOpen(false);
+        window.requestAnimationFrame(() => themeEngineButtonRef.current?.focus());
+        return;
+      }
+
+      setPreviewOpen(false);
     };
 
     document.body.style.overflow = "hidden";
@@ -216,7 +229,7 @@ export function ThemeStore({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [previewOpen]);
+  }, [previewOpen, themeEngineOpen]);
 
   const categories = useMemo(
     () => ["All", ...new Set(catalog.map((entry) => entry.category))],
@@ -249,6 +262,9 @@ export function ThemeStore({
     : null;
   const selectableCount = catalog.filter((entry) => entry.canPersist).length;
   const selectedIsSaved = selected?.layoutKey === savedLayoutKey;
+  const selectedSupportsThemeEngine = selected
+    ? isAiThemeEngineSupported(selected.layoutKey)
+    : false;
   const selectedIndex = selected
     ? catalog.findIndex((entry) => entry.layoutKey === selected.layoutKey)
     : -1;
@@ -259,6 +275,7 @@ export function ThemeStore({
     }
 
     setLayoutKey(nextLayoutKey);
+    setThemeEngineOpen(false);
     setFeedback(null);
     setPreviewOpen(openPreview);
     window.history.replaceState(
@@ -266,6 +283,16 @@ export function ThemeStore({
       "",
       `/themes?portfolio=${encodeURIComponent(portfolioId)}&theme=${encodeURIComponent(nextLayoutKey)}`,
     );
+  }
+
+  function closePreview() {
+    setThemeEngineOpen(false);
+    setPreviewOpen(false);
+  }
+
+  function closeThemeEngine() {
+    setThemeEngineOpen(false);
+    window.requestAnimationFrame(() => themeEngineButtonRef.current?.focus());
   }
 
   function movePreview(direction: -1 | 1) {
@@ -289,6 +316,7 @@ export function ThemeStore({
     }
 
     setLayoutKey(theme.layoutKey);
+    if (theme.layoutKey !== layoutKey) setThemeEngineOpen(false);
     setFeedback(null);
     if (theme.layoutKey !== layoutKey) {
       window.history.replaceState(
@@ -352,6 +380,13 @@ export function ThemeStore({
         });
       }
     });
+  }
+
+  function reconcileThemeStudioConfig(themeConfig: ThemeConfig) {
+    setConfigOverrides((current) => ({
+      ...current,
+      [selected.layoutKey]: themeConfig,
+    }));
   }
 
   if (!selected || !selectedConfig) {
@@ -536,7 +571,7 @@ export function ThemeStore({
           <button
             aria-label="Close theme preview"
             className={styles.overlayBackdrop}
-            onClick={() => setPreviewOpen(false)}
+            onClick={closePreview}
             type="button"
           />
           <section className={styles.previewDialog}>
@@ -562,6 +597,27 @@ export function ThemeStore({
                   type="button"
                 >
                   <ChevronRight aria-hidden="true" />
+                </button>
+                <button
+                  aria-controls="ai-theme-engine-drawer"
+                  aria-expanded={themeEngineOpen}
+                  className={styles.engineButton}
+                  disabled={!selectedSupportsThemeEngine || !selectedIsSaved}
+                  onClick={() => setThemeEngineOpen(true)}
+                  ref={themeEngineButtonRef}
+                  title={
+                    !selectedSupportsThemeEngine
+                      ? "AI customization is currently available for selected themes."
+                      : !selectedIsSaved
+                        ? "Select this theme to customize it with AI."
+                        : "Open AI Theme Engine"
+                  }
+                  type="button"
+                >
+                  <Sparkles aria-hidden="true" />
+                  {selectedSupportsThemeEngine
+                    ? "AI Theme Engine"
+                    : "AI Theme Engine · Soon"}
                 </button>
                 <button
                   className={styles.modalUseButton}
@@ -593,7 +649,7 @@ export function ThemeStore({
                 <button
                   aria-label="Close theme preview"
                   className={styles.closeButton}
-                  onClick={() => setPreviewOpen(false)}
+                  onClick={closePreview}
                   type="button"
                 >
                   <X aria-hidden="true" />
@@ -622,23 +678,41 @@ export function ThemeStore({
               ) : null}
             </div>
 
-            <div className={styles.previewViewport}>
-              <div className={styles.previewCanvas}>
-                <PreviewBoundary key={selected.layoutKey}>
-                  <Suspense fallback={<PreviewLoading />}>
-                    <LiveThemePreview
-                      config={selectedConfig}
-                      data={portfolioData}
-                      layoutKey={selected.layoutKey}
-                    />
-                  </Suspense>
-                </PreviewBoundary>
+            <div
+              className={cn(
+                styles.previewWorkspace,
+                themeEngineOpen && styles.previewWorkspaceWithEngine,
+              )}
+            >
+              {selectedIsSaved && selectedSupportsThemeEngine ? (
+                <ThemeStudio
+                  config={selectedConfig}
+                  key={selected.layoutKey}
+                  layoutKey={selected.layoutKey}
+                  onClose={closeThemeEngine}
+                  onConfigSaved={reconcileThemeStudioConfig}
+                  open={themeEngineOpen}
+                  portfolioId={portfolioId}
+                />
+              ) : null}
+              <div className={styles.previewViewport}>
+                <div className={styles.previewCanvas}>
+                  <PreviewBoundary key={selected.layoutKey}>
+                    <Suspense fallback={<PreviewLoading />}>
+                      <LiveThemePreview
+                        config={selectedConfig}
+                        data={portfolioData}
+                        layoutKey={selected.layoutKey}
+                      />
+                    </Suspense>
+                  </PreviewBoundary>
+                </div>
               </div>
             </div>
             <footer className={styles.previewFooter}>
               <span>{selectedIndex + 1} / {catalog.length}</span>
               <p>Previewing with {portfolioData.personal.fullName || "your portfolio"}&apos;s real saved content.</p>
-              <button onClick={() => setPreviewOpen(false)} type="button">Close preview</button>
+              <button onClick={closePreview} type="button">Close preview</button>
             </footer>
           </section>
         </div>

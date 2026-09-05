@@ -8,6 +8,7 @@ import {
   GeminiOverallTimeoutError,
   remainingGeminiBudgetMs,
 } from "@/lib/ai/extraction-budget";
+import { isProfolioDemoMode } from "@/lib/demo/config";
 import {
   GEMINI_MODEL_ATTEMPT_TIMEOUT_MS,
   GEMINI_OVERALL_TIMEOUT_MS,
@@ -27,6 +28,12 @@ import {
   parseResumePdf,
   type ResumePdfSource,
 } from "@/lib/resumes/resume-source.server";
+import { shouldUseVishvDemoResume } from "@/lib/resumes/demo-resume-match";
+import {
+  DEMO_RESUME_MIN_PROCESSING_MS,
+  waitForDemoResumeMinimum,
+} from "@/lib/resumes/demo-resume-timing";
+import { buildDemoVishvPortfolio } from "@/lib/resumes/demo-vishv-resume.server";
 import type { ResumeProcessingTiming } from "@/lib/resumes/timing";
 import { PortfolioDataSchema } from "@/lib/validation/portfolio";
 import type { PortfolioData } from "@/types/portfolio";
@@ -56,6 +63,7 @@ type PreparedResumeSource =
   | { kind: "text"; text: string };
 
 type ExtractPortfolioOptions = {
+  demoStartedAtMs?: number;
   timing?: ResumeProcessingTiming;
 };
 
@@ -334,9 +342,13 @@ function logPdfSourceDiagnostics(source: ResumePdfSource) {
 export async function extractPortfolioFromPdf(
   pdfBytes: Uint8Array,
   improveWithAi: boolean,
-  { timing }: ExtractPortfolioOptions = {},
+  {
+    demoStartedAtMs = performance.now(),
+    timing,
+  }: ExtractPortfolioOptions = {},
 ): Promise<PortfolioData> {
   let source = EMPTY_PDF_SOURCE;
+  let pdfParseSucceeded = false;
 
   try {
     source = timing
@@ -344,10 +356,40 @@ export async function extractPortfolioFromPdf(
           parseResumePdf(pdfBytes),
         )
       : await parseResumePdf(pdfBytes);
+    pdfParseSucceeded = true;
     logPdfSourceDiagnostics(source);
   } catch (error) {
     // Local parsing is an enhancement; Gemini's existing PDF path remains the fallback.
     logResumeExtractionError("pdf-deterministic-parse", error);
+  }
+
+  if (
+    pdfParseSucceeded &&
+    shouldUseVishvDemoResume(source.text, isProfolioDemoMode())
+  ) {
+    const portfolio = timing
+      ? timing.measureSync("portfolio-normalization", () =>
+          buildDemoVishvPortfolio(),
+        )
+      : buildDemoVishvPortfolio();
+
+    if (process.env.NODE_ENV === "development") {
+      console.info("[resume-demo]", {
+        matched: true,
+        source: "deterministic-demo-fixture",
+        minimumDurationMs: DEMO_RESUME_MIN_PROCESSING_MS,
+      });
+    }
+
+    if (timing) {
+      await timing.measure("demo-minimum-duration", () =>
+        waitForDemoResumeMinimum(demoStartedAtMs),
+      );
+    } else {
+      await waitForDemoResumeMinimum(demoStartedAtMs);
+    }
+
+    return portfolio;
   }
 
   const preparedSource = timing

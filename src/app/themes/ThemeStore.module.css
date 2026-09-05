@@ -548,6 +548,7 @@
 .useButton,
 .modalUseButton,
 .publishButton,
+.engineButton,
 .iconButton,
 .closeButton,
 .emptyState button,
@@ -597,7 +598,8 @@
 .previewButton svg,
 .useButton svg,
 .modalUseButton svg,
-.publishButton svg {
+.publishButton svg,
+.engineButton svg {
   width: 14px;
   height: 14px;
 }
@@ -606,6 +608,7 @@
 .useButton:focus-visible,
 .modalUseButton:focus-visible,
 .publishButton:focus-visible,
+.engineButton:focus-visible,
 .iconButton:focus-visible,
 .closeButton:focus-visible,
 .emptyState button:focus-visible,
@@ -615,7 +618,8 @@
 
 .useButton:disabled,
 .modalUseButton:disabled,
-.publishButton:disabled {
+.publishButton:disabled,
+.engineButton:disabled {
   cursor: not-allowed;
   opacity: 0.46;
   transform: none;
@@ -809,9 +813,37 @@
   background: #fff6df;
 }
 
-.previewViewport {
+.previewWorkspace {
+  position: relative;
   min-height: 0;
   flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.previewWorkspaceWithEngine {
+  grid-template-columns: 390px minmax(0, 1fr);
+}
+
+.engineButton {
+  min-height: 38px;
+  padding: 0 13px;
+  color: #73402f;
+  border-color: rgba(188, 99, 72, 0.32);
+  border-radius: 11px;
+  background: #fff3e8;
+}
+
+.engineButton:hover:not(:disabled) {
+  border-color: rgba(188, 99, 72, 0.55);
+  background: #ffe9dc;
+  transform: translateY(-1px);
+}
+
+.previewViewport {
+  min-width: 0;
+  min-height: 0;
   padding: 14px;
   overflow: auto;
   background:
@@ -921,6 +953,8 @@
   .previewIdentity > span { display: block; margin: 4px 0 0; }
   .previewActions { flex-wrap: wrap; justify-content: flex-end; }
   .publishButton { display: none; }
+  .previewWorkspace,
+  .previewWorkspaceWithEngine { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 620px) {
@@ -941,6 +975,7 @@
   .previewIdentity h2 { font-size: 1rem; }
   .previewActions .iconButton,
   .previewActions .modalUseButton { display: none; }
+  .engineButton { min-width: 38px; padding-inline: 10px; font-size: 0; }
   .closeButton { margin-left: 0; }
   .previewViewport { padding: 7px; }
   .previewCanvas { border-radius: 7px; }

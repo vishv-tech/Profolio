@@ -2,11 +2,11 @@
 
 import {
   ContactLine,
-  frameStyle,
   OrderedSections,
   ProfileIdentity,
   SectionContent,
   SectionTitle,
+  themeFrameProps,
 } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
@@ -43,10 +43,8 @@ export default function DynamicBentoTheme({ data, config }: PavniThemeProps) {
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-dynamic-bento"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-dynamic-bento")}
     >
       <header className={styles.intro}>
         <span className={styles.dot} aria-hidden="true" />

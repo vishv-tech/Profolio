@@ -1,5 +1,11 @@
 export interface ThemeConfig {
   appearance: ThemeAppearance;
+  /**
+   * Reversible, AI-authored presentation overrides. The saved theme appearance
+   * remains the immutable baseline so clearing this object restores the exact
+   * pre-customization design.
+   */
+  styleOverrides?: ThemeStyleOverrides;
   sections: ThemeSections;
   visibility: ThemeVisibility;
 }
@@ -16,6 +22,7 @@ export interface ThemeAppearance {
 
   fontFamily: ThemeFont;
   headingFontFamily: ThemeFont;
+  headingScale?: "small" | "medium" | "large";
 
   borderRadius: number;
 
@@ -23,6 +30,8 @@ export interface ThemeAppearance {
 
   animationIntensity: "none" | "subtle" | "dynamic";
 }
+
+export type ThemeStyleOverrides = Partial<ThemeAppearance>;
 
 export type ThemeFont =
   | "Geist"

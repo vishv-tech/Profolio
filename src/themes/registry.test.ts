@@ -15,6 +15,7 @@ import {
   sparsePortfolioFixture,
 } from "./career-pack/dev/fixtures";
 import { pavniThemePack } from "./pavni-pack";
+import { AI_THEME_ENGINE_LAYOUT_KEYS } from "@/lib/theme-ai/capabilities";
 import {
   PHOTO_FREE_THEME_LAYOUT_KEYS,
   PROFILE_IMAGE_THEME_LAYOUT_KEYS,
@@ -52,6 +53,79 @@ test("unified lookups fail safely and composition still rejects duplicates", asy
     () => createThemeRegistry(pavniThemePack, careerThemePack, pavniThemePack),
     /Duplicate theme layout key/,
   );
+});
+
+test("the ten supported themes render saved AI overrides without mutating data", async () => {
+  const customizedConfig = {
+    ...careerThemeFixtureConfig,
+    styleOverrides: {
+      colorMode: "dark" as const,
+      backgroundColor: "#101828",
+      surfaceColor: "#1d2939",
+      textColor: "#f9fafb",
+      mutedTextColor: "#d0d5dd",
+      accentColor: "#53b1fd",
+      borderColor: "#344054",
+      fontFamily: "Inter" as const,
+      headingFontFamily: "Playfair Display" as const,
+      headingScale: "large" as const,
+      borderRadius: 24,
+      spacing: "spacious" as const,
+    },
+  };
+  const fullBefore = structuredClone(fullPortfolioFixture);
+  const sparseBefore = structuredClone(sparsePortfolioFixture);
+
+  assert.equal(AI_THEME_ENGINE_LAYOUT_KEYS.length, 10);
+
+  for (const layoutKey of AI_THEME_ENGINE_LAYOUT_KEYS) {
+    const Theme = await loadThemeComponent(layoutKey);
+    assert.ok(Theme, `${layoutKey} should load`);
+
+    for (const data of [fullPortfolioFixture, sparsePortfolioFixture]) {
+      const html = renderToStaticMarkup(
+        createElement(Theme, { config: customizedConfig, data }),
+      );
+
+      assert.match(html, /#101828/);
+      assert.match(html, /#53b1fd/);
+      assert.match(html, /--theme-heading-scale:1\.12/);
+      assert.match(html, /data-ai-theme-customized="true"/);
+      assert.match(html, new RegExp(`data-theme-layout="${layoutKey}"`));
+    }
+  }
+
+  assert.deepEqual(fullPortfolioFixture, fullBefore);
+  assert.deepEqual(sparsePortfolioFixture, sparseBefore);
+});
+
+test("default and unsupported themes never activate AI override styling", async () => {
+  const firstSupported = AI_THEME_ENGINE_LAYOUT_KEYS[0];
+  const firstUnsupported = "pavni-blue-beige-folders";
+  const supportedTheme = await loadThemeComponent(firstSupported);
+  const unsupportedTheme = await loadThemeComponent(firstUnsupported);
+  assert.ok(supportedTheme);
+  assert.ok(unsupportedTheme);
+
+  const defaultHtml = renderToStaticMarkup(
+    createElement(supportedTheme, {
+      config: careerThemeFixtureConfig,
+      data: fullPortfolioFixture,
+    }),
+  );
+  assert.doesNotMatch(defaultHtml, /data-ai-theme-customized/);
+
+  const unsupportedHtml = renderToStaticMarkup(
+    createElement(unsupportedTheme, {
+      config: {
+        ...careerThemeFixtureConfig,
+        styleOverrides: { backgroundColor: "#101828" },
+      },
+      data: fullPortfolioFixture,
+    }),
+  );
+  assert.doesNotMatch(unsupportedHtml, /data-ai-theme-customized/);
+  assert.doesNotMatch(unsupportedHtml, /#101828/);
 });
 
 test("profile-image support audit partitions every active theme", () => {

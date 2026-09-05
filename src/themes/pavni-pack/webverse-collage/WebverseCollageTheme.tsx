@@ -4,19 +4,20 @@ import type { PointerEvent } from "react";
 
 import {
   ContactLine,
-  frameStyle,
   getThemeInitials,
   OrderedSections,
   SafeProfileImage,
   SectionContent,
   SectionTitle,
+  themeFrameProps,
 } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
 import styles from "./styles.module.css";
 
 export default function WebverseCollageTheme({ data, config }: PavniThemeProps) {
-  const isDynamic = config.appearance.animationIntensity === "dynamic";
+  const frameProps = themeFrameProps(config, "pavni-webverse-collage");
+  const isDynamic = frameProps["data-animation"] === "dynamic";
   const moveWeb = (event: PointerEvent<HTMLElement>) => {
     if (!isDynamic) return;
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -44,11 +45,9 @@ export default function WebverseCollageTheme({ data, config }: PavniThemeProps) 
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-webverse-collage"
       onPointerMove={isDynamic ? moveWeb : undefined}
-      style={frameStyle(config)}
+      {...frameProps}
     >
       <header className={styles.hero}>
         <div className={styles.paperNoise} aria-hidden="true" />

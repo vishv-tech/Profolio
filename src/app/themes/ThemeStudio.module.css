@@ -1,0 +1,346 @@
+.studio {
+  display: none;
+  width: 390px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  padding: 18px;
+  overflow: hidden;
+  border-right: 1px solid var(--store-line);
+  background:
+    radial-gradient(circle at 100% 0, rgba(188, 99, 72, 0.12), transparent 15rem),
+    #fffdf8;
+}
+
+.studioOpen {
+  display: flex;
+  animation: studio-drawer-in 180ms ease both;
+}
+
+.header {
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--store-line);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  color: #73402f;
+  border: 1px solid rgba(188, 99, 72, 0.25);
+  border-radius: 999px;
+  background: #fff3e8;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.header h3 {
+  margin: 12px 0 5px;
+  color: var(--store-ink);
+  font-family: Georgia, serif;
+  font-size: 1.35rem;
+  letter-spacing: -0.04em;
+}
+
+.header p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--store-muted);
+  font-size: 0.66rem;
+  line-height: 1.55;
+}
+
+.closeButton {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  color: var(--store-ink);
+  border: 1px solid var(--store-line);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: var(--store-sage-light);
+}
+
+.closeButton:focus-visible {
+  outline: 3px solid rgba(184, 93, 67, 0.22);
+  outline-offset: 2px;
+}
+
+.closeButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+.messages {
+  display: flex;
+  min-height: 128px;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 3px 14px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.assistantMessage,
+.errorMessage,
+.userMessage {
+  width: fit-content;
+  max-width: 92%;
+  padding: 10px 12px;
+  border: 1px solid var(--store-line);
+  border-radius: 12px 12px 12px 4px;
+  background: #f5f2e9;
+}
+
+.userMessage {
+  align-self: flex-end;
+  color: #fff;
+  border-color: var(--store-ink);
+  border-radius: 12px 12px 4px;
+  background: var(--store-ink);
+}
+
+.errorMessage {
+  color: #793926;
+  border-color: rgba(188, 99, 72, 0.35);
+  background: #fff0e9;
+}
+
+.assistantMessage > span,
+.errorMessage > span,
+.userMessage > span {
+  display: block;
+  margin-bottom: 3px;
+  color: inherit;
+  font-size: 0.48rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+  text-transform: uppercase;
+}
+
+.assistantMessage p,
+.errorMessage p,
+.userMessage p {
+  margin: 0;
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.suggestions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-bottom: 12px;
+}
+
+.suggestions button,
+.utilities button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+  color: var(--store-ink);
+  border: 1px solid var(--store-line);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.54rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.suggestions button:hover,
+.utilities button:hover {
+  border-color: rgba(23, 55, 46, 0.35);
+  background: var(--store-sage-light);
+}
+
+.suggestions button:focus-visible,
+.utilities button:focus-visible,
+.composer button:focus-visible,
+.composer textarea:focus-visible {
+  outline: 3px solid rgba(184, 93, 67, 0.22);
+  outline-offset: 2px;
+}
+
+.suggestions button:disabled,
+.utilities button:disabled,
+.composer button:disabled,
+.composer textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--store-muted);
+  font-size: 0.54rem;
+  font-weight: 750;
+}
+
+.form {
+  flex: none;
+}
+
+.composer {
+  position: relative;
+}
+
+.composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 11px 92px 11px 11px;
+  color: var(--store-ink);
+  border: 1px solid var(--store-line);
+  border-radius: 12px;
+  outline: none;
+  background: #fff;
+  font: inherit;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.composer textarea::placeholder {
+  color: #8b938f;
+}
+
+.composer textarea:focus {
+  border-color: rgba(23, 55, 46, 0.42);
+}
+
+.composer button {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  background: var(--store-clay);
+  font-size: 0.58rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.composer button svg,
+.utilities button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.spinner {
+  animation: studio-spin 850ms linear infinite;
+}
+
+.status {
+  min-height: 24px;
+  padding: 6px 2px 0;
+  color: var(--store-muted);
+  font-size: 0.55rem;
+}
+
+.utilities {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--store-line);
+}
+
+@keyframes studio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes studio-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+
+@media (max-width: 920px) {
+  .studio {
+    position: absolute;
+    z-index: 5;
+    inset: 0 auto 0 0;
+    width: min(400px, 100%);
+    max-height: none;
+    overflow: hidden;
+    border-right: 1px solid var(--store-line);
+    box-shadow: 18px 0 45px rgba(13, 28, 23, 0.2);
+  }
+
+  .messages {
+    min-height: 95px;
+  }
+}
+
+@media (max-width: 620px) {
+  .studio {
+    width: 100%;
+    padding: 13px;
+  }
+
+  .header p {
+    display: none;
+  }
+
+  .header h3 {
+    margin-top: 8px;
+    font-size: 1.05rem;
+  }
+
+  .suggestions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .suggestions button {
+    flex: 0 0 auto;
+  }
+
+  .composer textarea {
+    min-height: 76px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .studioOpen {
+    animation: none;
+  }
+}

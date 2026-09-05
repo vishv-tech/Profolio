@@ -2,9 +2,9 @@
 
 import {
   ContactLine,
-  frameStyle,
   OrderedSections,
   SectionContent,
+  themeFrameProps,
 } from "../shared";
 import foundation from "../shared/foundation.module.css";
 import type { PavniThemeProps } from "../types";
@@ -22,10 +22,8 @@ export default function ProfessionalEditorialTheme({ data, config }: PavniThemeP
   return (
     <main
       className={`${foundation.root} ${styles.root}`}
-      data-animation={config.appearance.animationIntensity}
-      data-color-mode={config.appearance.colorMode}
       data-theme-layout="pavni-professional-editorial"
-      style={frameStyle(config)}
+      {...themeFrameProps(config, "pavni-professional-editorial")}
     >
       <header className={styles.cover}>
         <nav aria-label="Portfolio navigation" className={styles.nav}>

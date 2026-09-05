@@ -4,6 +4,7 @@ import type {
   ThemeAppearance,
   ThemeConfig,
   ThemeSections,
+  ThemeStyleOverrides,
   ThemeVisibility,
 } from "@/types/theme";
 
@@ -49,9 +50,27 @@ export const ThemeAppearanceSchema: z.ZodType<ThemeAppearance> =
     borderColor: ThemeColorSchema,
     fontFamily: ThemeFontSchema,
     headingFontFamily: ThemeFontSchema,
+    headingScale: z.enum(["small", "medium", "large"]).optional(),
     borderRadius: z.number().finite().min(0).max(48),
     spacing: z.enum(["compact", "comfortable", "spacious"]),
     animationIntensity: z.enum(["none", "subtle", "dynamic"]),
+  });
+
+export const ThemeStyleOverridesSchema: z.ZodType<ThemeStyleOverrides> =
+  z.strictObject({
+    colorMode: z.enum(["light", "dark"]).optional(),
+    backgroundColor: ThemeColorSchema.optional(),
+    surfaceColor: ThemeColorSchema.optional(),
+    textColor: ThemeColorSchema.optional(),
+    mutedTextColor: ThemeColorSchema.optional(),
+    accentColor: ThemeColorSchema.optional(),
+    borderColor: ThemeColorSchema.optional(),
+    fontFamily: ThemeFontSchema.optional(),
+    headingFontFamily: ThemeFontSchema.optional(),
+    headingScale: z.enum(["small", "medium", "large"]).optional(),
+    borderRadius: z.number().finite().min(0).max(48).optional(),
+    spacing: z.enum(["compact", "comfortable", "spacious"]).optional(),
+    animationIntensity: z.enum(["none", "subtle", "dynamic"]).optional(),
   });
 
 export const ThemeSectionsSchema: z.ZodType<ThemeSections> = z.strictObject({
@@ -70,6 +89,7 @@ export const ThemeVisibilitySchema: z.ZodType<ThemeVisibility> =
 
 export const ThemeConfigSchema: z.ZodType<ThemeConfig> = z.strictObject({
   appearance: ThemeAppearanceSchema,
+  styleOverrides: ThemeStyleOverridesSchema.optional(),
   sections: ThemeSectionsSchema,
   visibility: ThemeVisibilitySchema,
 });

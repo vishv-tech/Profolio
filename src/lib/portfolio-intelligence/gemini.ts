@@ -7,8 +7,9 @@ import {
 import { getGeminiFailureDiagnostics } from "@/lib/ai/model-fallback";
 import type { GenerateStructuredContent } from "@/lib/portfolio-intelligence/service";
 
-export const PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS = 12_000;
-export const PORTFOLIO_INTELLIGENCE_TIMEOUT_MS = 45_000;
+export const PORTFOLIO_INTELLIGENCE_MODEL_ATTEMPT_TIMEOUT_MS = 30_000;
+export const UPGRADE_PLAN_TIMEOUT_MS = 45_000;
+export const CONTENT_IMPROVEMENT_TIMEOUT_MS = 105_000;
 export const PORTFOLIO_INTELLIGENCE_RECOVERY_BACKOFF_MS = 350;
 export const PORTFOLIO_INTELLIGENCE_RECOVERY_SAFETY_MARGIN_MS = 1_000;
 
@@ -26,14 +27,18 @@ function logPortfolioIntelligenceAttempt(
   }
 }
 
-export const generateStructuredPortfolioIntelligence: GenerateStructuredContent =
-  async ({ jsonSchema, prompt, systemInstruction }) => {
+function createPortfolioIntelligenceGenerator(
+  overallTimeoutMs: number,
+): GenerateStructuredContent {
+  return async ({ jsonSchema, prompt, systemInstruction }) => {
     const controller = new AbortController();
-    const deadlineAt = performance.now() + PORTFOLIO_INTELLIGENCE_TIMEOUT_MS;
+    const deadlineAt = performance.now() + overallTimeoutMs;
     const timeout = setTimeout(
       () => controller.abort(new Error("Portfolio intelligence timed out.")),
-      PORTFOLIO_INTELLIGENCE_TIMEOUT_MS,
+      overallTimeoutMs,
     );
+    const remainingBudgetMs = () =>
+      Math.max(0, Math.round(deadlineAt - performance.now()));
 
     try {
       const { value } = await requestWithGeminiAvailabilityFallback(
@@ -72,6 +77,7 @@ export const generateStructuredPortfolioIntelligence: GenerateStructuredContent 
               model,
               outcome:
                 outcome === "timeout" ? "attempt_timeout" : outcome,
+              remainingMs: remainingBudgetMs(),
               recovery,
             });
           },
@@ -79,12 +85,14 @@ export const generateStructuredPortfolioIntelligence: GenerateStructuredContent 
             logPortfolioIntelligenceAttempt("model-attempt-start", {
               attemptNumber,
               model,
+              remainingMs: remainingBudgetMs(),
               recovery,
             });
           },
           onFallback: (fromModel, toModel) => {
             logPortfolioIntelligenceAttempt("model-fallback", {
               fromModel,
+              remainingMs: remainingBudgetMs(),
               toModel,
             });
           },
@@ -116,3 +124,10 @@ export const generateStructuredPortfolioIntelligence: GenerateStructuredContent 
       clearTimeout(timeout);
     }
   };
+}
+
+export const generateStructuredUpgradePlan =
+  createPortfolioIntelligenceGenerator(UPGRADE_PLAN_TIMEOUT_MS);
+
+export const generateStructuredPortfolioIntelligence =
+  createPortfolioIntelligenceGenerator(CONTENT_IMPROVEMENT_TIMEOUT_MS);

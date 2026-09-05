@@ -1,4 +1,5 @@
 import type { PortfolioScore } from "@/lib/portfolio-score/score";
+import { buildDeterministicUpgradePlan } from "@/lib/portfolio-intelligence/deterministic-upgrade-plan";
 import {
   createContentImprovementPrompt,
   createUpgradePlanPrompt,
@@ -35,6 +36,36 @@ export async function generatePortfolioUpgradePlan(
   });
 
   return parseStructuredJson(response, PortfolioUpgradePlanSchema);
+}
+
+export type PortfolioUpgradePlanResult = {
+  plan: PortfolioUpgradePlan;
+  source: "ai" | "deterministic-fallback";
+};
+
+export async function generateReliablePortfolioUpgradePlan(
+  data: PortfolioData,
+  score: PortfolioScore,
+  generate: GenerateStructuredContent,
+  buildFallback: (
+    portfolio: PortfolioData,
+    portfolioScore: PortfolioScore,
+  ) => PortfolioUpgradePlan = buildDeterministicUpgradePlan,
+): Promise<PortfolioUpgradePlanResult> {
+  try {
+    const plan = await generatePortfolioUpgradePlan(data, score, generate);
+
+    if (plan) {
+      return { plan, source: "ai" };
+    }
+  } catch {
+    // The validated deterministic analysis remains independent of the provider.
+  }
+
+  return {
+    plan: PortfolioUpgradePlanSchema.parse(buildFallback(data, score)),
+    source: "deterministic-fallback",
+  };
 }
 
 export async function generateContentImprovement(
